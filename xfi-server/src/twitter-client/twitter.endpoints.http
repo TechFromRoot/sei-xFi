@@ -1,0 +1,10 @@
+POST http://localhost:3827/twitter-client
+Content-Type: application/json
+
+{  
+    
+     "prompt": "tip 0.1 MNT to 0x2189878C4963B84Fd737640db71D7650214c4A18"
+ 
+}
+
+    # "prompt": "buy FQgtfugBdpFN7PZ6NdPrZpVLDBrPGxXesi4gVu3vErhY for 1 sol "
