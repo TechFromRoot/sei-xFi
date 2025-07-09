@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { XfiDefiSolService } from './xfi-defi-sol.service';
 import { WalletModule } from 'src/wallet/wallet.module';
 import { HttpModule } from '@nestjs/axios';
 import {
@@ -18,7 +17,7 @@ import { XfiDefiMantleService } from './xfi-defi-mantle.service';
       { name: Transaction.name, schema: TransactionSchema },
     ]),
   ],
-  exports: [XfiDefiSolService, XfiDefiEthereumService, XfiDefiMantleService],
-  providers: [XfiDefiSolService, XfiDefiEthereumService, XfiDefiMantleService],
+  exports: [XfiDefiEthereumService, XfiDefiMantleService],
+  providers: [XfiDefiEthereumService, XfiDefiMantleService],
 })
 export class XfiDexModule {}

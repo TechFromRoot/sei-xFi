@@ -1,6 +1,6 @@
 # xFi Wallet 🤖📈
 
-**xFi Wallet** is a multichain DeFi bot that brings **social finance** directly to **Twitter**. It supports **Ethereum**, **Mantle**, enabling users to **tip**, **send**, and **trade tokens** directly by tweeting @xFi_wallet with simple commands.
+**xFi Wallet** is a multichain DeFi bot that brings **social finance** directly to **Twitter**. It supports **Ethereum**,**Sei**, **Mantle**, enabling users to **tip**, **send**, and **trade tokens** directly by tweeting @xFi_wallet with simple commands.
 
 ---
 
