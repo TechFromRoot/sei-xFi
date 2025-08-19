@@ -1,6 +1,6 @@
 # xFi Wallet 🤖📈
 
-**xFi Wallet** is a multichain DeFi bot that brings **social finance** directly to **Twitter**. It supports **Ethereum**,**Sei**, **Mantle**, enabling users to **tip**, **send**, and **trade tokens** directly by tweeting @xFi_wallet with simple commands.
+**xFi Wallet** is a DeFi bot that brings **social finance** directly to **Twitter**. It supports**Sei**, enabling users to **tip**, **send**, and **trade tokens** directly by tweeting @xFi_wallet with simple commands.
 
 ---
 
@@ -20,8 +20,7 @@ Make DeFi interactions **social**, **accessible**, and **frictionless** for ever
 
 ## 🔗 Supported Chains
 
-- **Ethereum**
-- **Mantle**
+- **Sei**
 
 ---
 
@@ -43,15 +42,15 @@ Make DeFi interactions **social**, **accessible**, and **frictionless** for ever
 Users can tip or send tokens using a simple Twitter mention:
 
 ```text
-@xFi_wallet  send 0.0001 mnt to @eketeUg on mantle
-@xFi_wallet  send 1 mnt to @eketeUg
-@xFi_wallet send 1 mnt to 0x2189878C4963B84Fd737640db71D7650214c4A18
+@xFi_wallet  send 0.0001 mnt to @eketeUg on sei
+@xFi_wallet  send 1 sei to @eketeUg
+@xFi_wallet send 1 sei to 0x2189878C4963B84Fd737640db71D7650214c4A18
 ```
 
 #### Supported recipient formats:
 
 - Twitter usernames (e.g., `@vitalik`)
-- ENS names (e.g., `vitalik.eth`)
+- ENS names (e.g., `vitalik.sei`)
 - Raw wallet addresses
 
 > 🧾 Gas fees are deducted from the user’s generated wallet. No extra platform fees.
@@ -60,10 +59,9 @@ Users can tip or send tokens using a simple Twitter mention:
 
 ## 🪙 Supported Tokens
 
-| Chain    | Tokens Supported |
-| -------- | ---------------- |
-| Ethereum | ETH, USDC, USDT  |
-| Mantle   | MNT, USDC, USDT  |
+| Chain | Tokens Supported |
+| ----- | ---------------- |
+| Sei   | SEI, USDC, USDT  |
 
 ---
 
@@ -111,7 +109,7 @@ Coming soon — Stay tuned for open-source modules and contribution guidelines.
 
 ## 📩 Contact
 
-For support or collaboration, reach out via [Twitter](https://x.com/xFi_wallet)
+<!-- For support or collaboration, reach out via [Twitter](https://x.com/xFi_wallet) -->
 
 ---
 
