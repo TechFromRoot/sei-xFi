@@ -1,6 +1,6 @@
 # xFi Wallet 🤖📈
 
-**xFi Wallet** is a DeFi bot that brings **social finance** directly to **Twitter**. It supports**Sei**, enabling users to **tip**, **send**, and **trade tokens** directly by tweeting @xFi_wallet with simple commands.
+**xFi Wallet** is a DeFi bot that brings **social finance** directly to **Twitter**. It supports **Sei**, enabling users to **tip**, **send**, and **trade tokens** directly by tweeting @xFi_wallet with simple commands.
 
 ---
 
