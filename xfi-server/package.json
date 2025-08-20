@@ -25,7 +25,7 @@
   "dependencies": {
     "@ai-sdk/openai": "^1.3.22",
     "@dynamic-labs-wallet/core": "^0.0.139",
-    "@dynamic-labs-wallet/node-evm": "^0.0.139",
+    "@dynamic-labs-wallet/node-evm": "^0.0.140",
     "@metaplex-foundation/js": "^0.20.1",
     "@nestjs/axios": "^4.0.0",
     "@nestjs/cache-manager": "^3.0.1",

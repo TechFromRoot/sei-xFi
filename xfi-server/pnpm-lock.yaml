@@ -18,8 +18,8 @@ importers:
         specifier: ^0.0.139
         version: 0.0.139
       '@dynamic-labs-wallet/node-evm':
-        specifier: ^0.0.139
-        version: 0.0.139(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))
+        specifier: ^0.0.140
+        version: 0.0.140(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@metaplex-foundation/js':
         specifier: ^0.20.1
         version: 0.20.1(@types/node@20.19.11)(arweave@1.15.7)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
@@ -443,19 +443,25 @@ packages:
   '@dynamic-labs-wallet/core@0.0.139':
     resolution: {integrity: sha512-iNV+BQ7ghcGR+WUQ9fPb/Jgz7pPGznevCsJ7CnOJIZil2GdL1btXA4NfTWxWkF9UR+tmNJE/GqmKSwzKvh1srA==}
 
-  '@dynamic-labs-wallet/node-evm@0.0.139':
-    resolution: {integrity: sha512-/F9sfeXVjMSkjuPjB575FHiTkeRfeDeobXT9a3LSdWWve65APY5Th+n6qGnH62cbVSWbAgtzM6SrxNBLZM9I7A==}
+  '@dynamic-labs-wallet/core@0.0.140':
+    resolution: {integrity: sha512-A6x6CNl5FEqMRB81CHwJ8fyjFcFG9yJYPdXblkDpMpgUGN+IU/6o7TYXFE5xFBXmaOLr3I5bvIKIKd/efz/bDg==}
+
+  '@dynamic-labs-wallet/node-evm@0.0.140':
+    resolution: {integrity: sha512-1SWtywplvoQTbGfFsHe6zule6EMkarmI+EHAcvwc3mpPXw5Cv7hNhvgpCQfbtbhXXVbVdxuZ/DuJCKFtLemrpQ==}
     peerDependencies:
       viem: ^2.22.1
 
-  '@dynamic-labs-wallet/node@0.0.139':
-    resolution: {integrity: sha512-Gfa3S/ijt39o+grWuJXiejLU27Hy740ZsTs2YiKxWe6whzSpsnlxyCwJ9F+4t/fhpLjE0RI4TCpTRhS5PaST9g==}
+  '@dynamic-labs-wallet/node@0.0.140':
+    resolution: {integrity: sha512-vXzXQfA4uIRI14Vw3qZpkZ+RGue8/wc8/nucgNTZ8HEMxVt7pETsbrSFXEOJiDmj9pMJ0Us6IvIHg8e9EHUETw==}
 
   '@dynamic-labs/logger@4.29.0':
     resolution: {integrity: sha512-1hg1rM3EFW0wle5GBHMQLjUvVHsrHj53TrJz+h5og1sVWU8CYdiIPApcupny2EkgRHNpN8Q2h4gsTIa0Hwwdtg==}
 
   '@dynamic-labs/sdk-api-core@0.0.753':
     resolution: {integrity: sha512-fs4s70BsxMeXYFQXkVmfC7hKYgjwOFMlU2QO4JqLsfzeuIRUkdxYekTcNjvHym+h9oiWc/a6+/ea5XYZOvHXdQ==}
+
+  '@dynamic-labs/sdk-api-core@0.0.758':
+    resolution: {integrity: sha512-zOGi0xOacx2qsZa7TYTbkhdYFGJcf1uyOSaCoe7rWac2wXd1zr0UvbtX59+sHw5l4B/2Zj8ulcHPe4QuEUrb4A==}
 
   '@eslint-community/eslint-utils@4.7.0':
     resolution: {integrity: sha512-dyybb3AcajC7uha6CvhdVRJqaKyn7w2YKqKyAN37NKYgZT36w+iRb0Dymmc5qEJ549c/S31cMMSFd75bteCpCw==}
@@ -5916,16 +5922,24 @@ snapshots:
     transitivePeerDependencies:
       - debug
 
-  '@dynamic-labs-wallet/node-evm@0.0.139(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))':
+  '@dynamic-labs-wallet/core@0.0.140':
     dependencies:
-      '@dynamic-labs-wallet/node': 0.0.139
+      '@dynamic-labs/sdk-api-core': 0.0.758
+      axios: 1.9.0
+      uuid: 11.1.0
+    transitivePeerDependencies:
+      - debug
+
+  '@dynamic-labs-wallet/node-evm@0.0.140(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))':
+    dependencies:
+      '@dynamic-labs-wallet/node': 0.0.140
       viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
     transitivePeerDependencies:
       - debug
 
-  '@dynamic-labs-wallet/node@0.0.139':
+  '@dynamic-labs-wallet/node@0.0.140':
     dependencies:
-      '@dynamic-labs-wallet/core': 0.0.139
+      '@dynamic-labs-wallet/core': 0.0.140
       '@dynamic-labs/logger': 4.29.0
       '@noble/hashes': 1.7.1
       uuid: 11.1.0
@@ -5937,6 +5951,8 @@ snapshots:
       eventemitter3: 5.0.1
 
   '@dynamic-labs/sdk-api-core@0.0.753': {}
+
+  '@dynamic-labs/sdk-api-core@0.0.758': {}
 
   '@eslint-community/eslint-utils@4.7.0(eslint@8.57.1)':
     dependencies:

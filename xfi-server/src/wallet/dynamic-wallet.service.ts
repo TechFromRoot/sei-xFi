@@ -1,23 +1,43 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { DynamicEvmWalletClient } from '@dynamic-labs-wallet/node-evm';
-import { ThresholdSignatureScheme } from '@dynamic-labs-wallet/core';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { sei } from 'viem/chains';
-// import { parseEther } from 'viem/utils';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from 'src/database/schemas/user.schema';
 import { Model } from 'mongoose';
 import { createWalletClient, http } from 'viem';
 
-@Injectable()
-export class DynamicWalletService {
-  private readonly logger = new Logger(DynamicWalletService.name);
-  private client: DynamicEvmWalletClient;
+async function loadDynamicWalletModule() {
+  const { DynamicEvmWalletClient } = await import(
+    '@dynamic-labs-wallet/node-evm'
+  );
+  const { ThresholdSignatureScheme } = await import(
+    '@dynamic-labs-wallet/core'
+  );
+  return { DynamicEvmWalletClient, ThresholdSignatureScheme };
+}
 
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {
-    this.client = new DynamicEvmWalletClient({
+@Injectable()
+export class DynamicWalletService implements OnModuleInit {
+  private readonly logger = new Logger(DynamicWalletService.name);
+  private DynamicEvmWalletClient: any;
+  private ThresholdSignatureScheme: any;
+  private client: any;
+
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+
+  async onModuleInit() {
+    const { DynamicEvmWalletClient, ThresholdSignatureScheme } =
+      await loadDynamicWalletModule();
+
+    this.DynamicEvmWalletClient = DynamicEvmWalletClient;
+    this.ThresholdSignatureScheme = ThresholdSignatureScheme;
+
+    this.client = new this.DynamicEvmWalletClient({
       authToken: process.env.DYNAMIC_AUTH_TOKEN!,
       environmentId: process.env.DYNAMIC_ENVIRONMENT_ID!,
     });
+
+    await this.client.authenticateApiToken(process.env.DYNAMIC_AUTH_TOKEN!);
+    this.logger.log('Dynamic Wallet Client initialized & authenticated');
   }
 
   async authenticate() {
@@ -29,29 +49,18 @@ export class DynamicWalletService {
     try {
       const authenticatedClient = await this.authenticate();
 
-      // Create new wallet using Dynamic's server-side infrastructure
       const evmWallet = await authenticatedClient.createWalletAccount({
-        thresholdSignatureScheme: ThresholdSignatureScheme.TWO_OF_TWO,
+        thresholdSignatureScheme: this.ThresholdSignatureScheme.TWO_OF_TWO,
         onError: (error: Error) => {
-          console.error('Error creating wallet:', error);
+          this.logger.error('Error creating wallet:', error.message);
           throw error;
         },
       });
 
-      //   const evmWallet = await this.client.createWalletAccount({
-      //     thresholdSignatureScheme: ThresholdSignatureScheme.TWO_OF_TWO,
-      //     password,
-      //     backUpToClientShareService: true,
-      //     onError: (error: Error) => {
-      //       this.logger.error('Wallet creation error:', error.message);
-      //     },
-      //   });
-
       this.logger.log(`Wallet created: ${evmWallet.accountAddress}`);
-
       return evmWallet;
     } catch (error) {
-      console.error('Error in getWallet:', error);
+      this.logger.error('Error in createWallet', error);
       throw error;
     }
   }
@@ -59,30 +68,11 @@ export class DynamicWalletService {
   async signTransaction(user: User, txRequest: any) {
     const authenticatedClient = await this.authenticate();
 
-    // const publicClient = this.client.createViemPublicClient({
-    //   chain,
-    //   rpcUrl: process.env.SEI_RPC,
-    // });
-
-    // const nounce = await publicClient.getTransactionCount({
-    //   address: user.walletAddress as `0x${string}`,
-    // });
-
-    // const txRequest = await publicClient?.prepareTransactionRequest({
-    //   chain,
-
-    //   account: address as `0x${string}`,
-    //   to: '0x0000000000000000000000000000000000000000',
-    //   value: parseEther('0.0001'),
-    // });
-
-    // Sign the transaction with Dynamic's server-side infrastructure
     const signedTx = await authenticatedClient.signTransaction({
       senderAddress: user.walletAddress as `0x${string}`,
       transaction: txRequest,
     });
 
-    // Send the signed transaction
     const walletClient = createWalletClient({
       chain: sei,
       transport: http(process.env.SEI_RPC),
