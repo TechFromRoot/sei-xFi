@@ -4,21 +4,16 @@ import { Model } from 'mongoose';
 import { Transaction } from 'src/database/schemas/transactions.schema';
 import { User } from 'src/database/schemas/user.schema';
 import { WalletService } from 'src/wallet/wallet.service';
-import { XfiDefiSolService } from 'src/xfi-defi/xfi-defi-sol.service';
-import { ethers, Contract } from 'ethers';
-import L2ResolverAbi from './utils/l2ResolverAbi';
+import { ethers } from 'ethers';
 import { XfiDefiEthereumService } from 'src/xfi-defi/xfi-defi-ethereum.service';
 import { TwitterClientBase } from './base.provider';
 import { UserService } from './user.service';
-import { XfiDefiMantleService } from 'src/xfi-defi/xfi-defi-mantle.service';
-
-const BASENAME_L2_RESOLVER_ADDRESS =
-  '0xC6d566A56A1aFf6508b41f6c90ff131615583BCD';
+import { XfiDefiSeiService } from 'src/xfi-defi/xfi-defi-sei.service';
+import { DynamicWalletService } from 'src/wallet/dynamic-wallet.service';
 
 type Action = 'buy' | 'sell' | 'send' | 'tip';
-// type Chain = 'solana' | 'ethereum' | 'base' | 'arbitrum';
 type TokenType = 'native' | 'stable' | 'token';
-type ReceiverType = 'wallet' | 'ens' | 'username';
+type ReceiverType = 'wallet' | 'ens' | 'username' | 'sns';
 
 interface Token {
   value: string;
@@ -31,11 +26,10 @@ interface Receiver {
   value?: string;
   userId?: string;
 }
-interface UserKey {
-  evmPK: string;
-  svmPK: string;
-  userId: string;
-}
+// interface UserKey {
+//   evmPK: string;
+//   userId: string;
+// }
 
 interface ParsedCommand {
   action: Action;
@@ -46,43 +40,26 @@ interface ParsedCommand {
 }
 
 // --- Helper Data ---
-const NATIVE_TOKENS = ['sol', 'eth', 'mnt'];
+const NATIVE_TOKENS = ['sol', 'eth', 'mnt', 'sei'];
 const STABLE_TOKENS = ['usdc', 'usdt'];
-
-// const CHAINS = ['solana', 'ethereum', 'mantle', 'arbitrum'];
 
 @Injectable()
 export class ParseCommandService {
   private readonly logger = new Logger(ParseCommandService.name);
   private ethProvider: ethers.JsonRpcProvider;
-  private mantleProvider: ethers.JsonRpcApiProvider;
+  private provider = new ethers.JsonRpcProvider(process.env.SEI_RPC);
   constructor(
     private readonly walletService: WalletService,
+    private readonly dynamicWalletService: DynamicWalletService,
     private readonly defiEthereumService: XfiDefiEthereumService,
-    private readonly defiMantleService: XfiDefiMantleService,
-    private readonly dexService: XfiDefiSolService,
+    private readonly defiSeiService: XfiDefiSeiService,
     private readonly twitterClientBase: TwitterClientBase,
     private readonly userService: UserService,
     @InjectModel(User.name)
     readonly userModel: Model<User>,
   ) {
     this.ethProvider = new ethers.JsonRpcProvider(process.env.ETHEREUM_RPC);
-    this.mantleProvider = new ethers.JsonRpcProvider(process.env.MANTLE_RPC);
   }
-
-  //   private getEnsChainType(ensName: string): string {
-  //     const parts = ensName.toLowerCase().split('.');
-
-  //     if (parts.length === 3 && parts[2] === 'eth') {
-  //       return parts[1];
-  //     }
-
-  //     if (parts.length === 2 && parts[1] === 'eth') {
-  //       return 'ethereum';
-  //     }
-
-  //     return 'unknown';
-  //   }
 
   private getEnsChainType(identifier: string): string {
     if (identifier.startsWith('@')) {
@@ -97,6 +74,10 @@ export class ParseCommandService {
 
     if (parts.length === 2 && parts[1] === 'eth') {
       return 'ethereum'; // e.g., 'dami.eth'
+    }
+
+    if (parts.length === 2 && parts[1] === 'sei') {
+      return 'sei'; // e.g., 'dami.sei'
     }
 
     return 'unknown';
@@ -138,23 +119,12 @@ export class ParseCommandService {
     return ethers.hexlify(Buffer.concat([...buffers, Buffer.from([0])]));
   }
 
-  // --- Helper Functions ---
-  //   detectChain(word: string): Chain | undefined {
-  //     const lower = word.toLowerCase();
-  //     if (lower === 'sol') return 'solana';
-  //     if (CHAINS.includes(lower)) return lower as Chain;
-  //   }
-
   detectChain(chainOrToken: string): string {
     const normalized = chainOrToken.toLowerCase();
 
-    if (normalized.includes('sol')) return 'solana';
-    if (normalized.includes('base')) return 'base';
-    if (normalized.includes('mode')) return 'mode';
-    if (normalized.includes('mantle')) return 'mantle';
+    if (normalized.includes('sei')) return 'sei';
     if (/^0x[a-fA-F0-9]{40}$/.test(chainOrToken)) return 'ethereum'; // EVM
-    if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(chainOrToken)) return 'solana'; // Solana pubkey format
-    return 'mantle'; // Default fallback
+    return 'sei'; // Default fallback
   }
 
   detectTokenType(value: string): TokenType {
@@ -166,6 +136,7 @@ export class ParseCommandService {
 
   detectReceiverType(value: string): ReceiverType {
     if (value.endsWith('.eth') || value.endsWith('.base.eth')) return 'ens';
+    if (value.endsWith('.sei')) return 'sns';
     if (value.startsWith('@')) return 'username';
     return 'wallet';
   }
@@ -260,13 +231,12 @@ export class ParseCommandService {
 
   // --- Placeholder Action Handlers ---
 
-  async resolveENS(name: string, chain: string): Promise<Receiver> {
+  async resolveENS(name: string): Promise<Receiver> {
     console.log('name  :', name);
     const ensChain = this.getEnsChainType(name);
     console.log(ensChain);
     switch (ensChain) {
       case 'ethereum':
-      case 'mantle':
         const ethAddress = await this.ethProvider.resolveName(name);
         console.log('ens name:', ethAddress);
         return {
@@ -291,10 +261,7 @@ export class ParseCommandService {
             throw new Error('error creating User');
           }
           return {
-            address:
-              chain == 'solana'
-                ? userExist.svmWalletAddress
-                : userExist.evmWalletAddress,
+            address: userExist.walletAddress,
             type: 'username',
             value: name,
             userId: user.id,
@@ -306,10 +273,7 @@ export class ParseCommandService {
 
       default:
         return {
-          address:
-            chain == 'solana'
-              ? process.env.ADMIN_WALLET_SVM
-              : process.env.ADMIN_WALLET_EVM,
+          address: process.env.ADMIN_WALLET_EVM,
           type: 'ens',
           value: name,
         };
@@ -320,66 +284,26 @@ export class ParseCommandService {
     chain: string,
     to: string,
     amount: string,
-    userKey: UserKey,
+    user: User,
     originalCommand: string,
   ) {
     console.log(`Sending ${amount} native on ${chain} to ${to}`);
     try {
-      if (chain == 'ethereum') {
+      if (chain == 'sei') {
         const data: Partial<Transaction> = {
-          userId: userKey.userId,
+          userId: user.userId,
           transactionType: 'send',
-          chain: 'ethereum',
+          chain: 'sei',
           amount: amount,
-          token: { address: 'eth', tokenType: 'native' },
+          token: { address: 'sei', tokenType: 'native' },
           receiver: { value: to, receiverType: 'wallet' },
           meta: {
             platform: 'twitter',
             originalCommand: originalCommand,
           },
         };
-        const response = await this.defiEthereumService.sendEth(
-          userKey.evmPK,
-          amount,
-          to,
-          data,
-        );
-        return response;
-      } else if (chain == 'mantle') {
-        const data: Partial<Transaction> = {
-          userId: userKey.userId,
-          transactionType: 'send',
-          chain: 'mantle',
-          amount: amount,
-          token: { address: 'mnt', tokenType: 'native' },
-          receiver: { value: to, receiverType: 'wallet' },
-          meta: {
-            platform: 'twitter',
-            originalCommand: originalCommand,
-          },
-        };
-        const response = await this.defiMantleService.sendMNT(
-          userKey.evmPK,
-          amount,
-          to,
-          data,
-        );
-        return response;
-      } else if (chain == 'solana') {
-        const data: Partial<Transaction> = {
-          userId: userKey.userId,
-          transactionType: 'send',
-          chain: 'solana',
-          amount: amount,
-          token: { address: 'solana', tokenType: 'native' },
-          receiver: { value: to, receiverType: 'wallet' },
-          meta: {
-            platform: 'twitter',
-            originalCommand: originalCommand,
-          },
-        };
-        const response = await this.dexService.sendSol(
-          userKey.svmPK,
+        const response = await this.defiSeiService.sendSEI(
+          user,
           amount,
           to,
           data,
@@ -396,18 +320,17 @@ export class ParseCommandService {
     token: string,
     to: string,
     amount: string,
-    userKey: UserKey,
+    user: User,
     originalCommand: string,
   ) {
     console.log(`Sending ${amount} stable ${token} on ${chain} to ${to}`);
 
     try {
-      if (chain == 'ethereum') {
-        console.log(to);
+      if (chain == 'sei') {
         const data: Partial<Transaction> = {
-          userId: userKey.userId,
+          userId: user.userId,
           transactionType: 'send',
-          chain: 'ethereum',
+          chain: 'sei',
           amount: amount,
           token: { address: token, tokenType: 'stable' },
           receiver: { value: to, receiverType: 'wallet' },
@@ -416,54 +339,13 @@ export class ParseCommandService {
             originalCommand: originalCommand,
           },
         };
-        const response = await this.defiEthereumService.sendERC20(
-          userKey.evmPK,
+        const response = await this.defiSeiService.sendERC20(
+          user,
           token,
           amount,
           to,
           data,
-        );
-        return response;
-      } else if (chain == 'mantle') {
-        const data: Partial<Transaction> = {
-          userId: userKey.userId,
-          transactionType: 'send',
-          chain: 'mantle',
-          amount: amount,
-          token: { address: token, tokenType: 'stable' },
-          receiver: { value: to, receiverType: 'wallet' },
-          meta: {
-            platform: 'twitter',
-            originalCommand: originalCommand,
-          },
-        };
-        const response = await this.defiMantleService.sendERC20(
-          userKey.evmPK,
-          token,
-          amount,
-          to,
-          data,
-        );
-        return response;
-      } else if (chain == 'solana') {
-        const data: Partial<Transaction> = {
-          userId: userKey.userId,
-          transactionType: 'send',
-          chain: 'solana',
-          amount: amount,
-          token: { address: token, tokenType: 'stable' },
-          receiver: { value: to, receiverType: 'wallet' },
-          meta: {
-            platform: 'twitter',
-            originalCommand: originalCommand,
-          },
-        };
-        const response = await this.dexService.sendSplToken(
-          userKey.svmPK,
-          token,
-          amount,
-          to,
-          data,
+          6,
         );
         return response;
       }
@@ -472,30 +354,19 @@ export class ParseCommandService {
     }
   }
 
-  //   async handleTokenSend(
-  //     chain: string,
-  //     token: string,
-  //     to: string,
-  //     amount: string,
-  //     originalCommand: string,
-  //   ) {
-  //     console.log(`Sending ${amount} of token ${token} on ${chain} to ${to}`);
-  //   }
-
   async handleBuy(
     chain: string,
     token: string,
     nativeAmount: string,
-    userPk: UserKey,
+    user: User,
     originalCommand: string,
   ) {
     try {
-      if (chain == 'solana') {
-        const response = await this.dexService.botBuyToken(
-          userPk.svmPK,
+      if (chain == 'sei') {
+        const response = await this.defiSeiService.buyToken(
           token,
           nativeAmount,
-          userPk.userId,
+          user,
           originalCommand,
         );
         return response;
@@ -509,17 +380,16 @@ export class ParseCommandService {
     chain: string,
     token: string,
     amount: string,
-    userPk: UserKey,
+    user: User,
     originalCommand: string,
   ) {
     console.log(`Selling ${amount}% of ${token} on ${chain}`);
     try {
-      if (chain == 'solana') {
-        const response = await this.dexService.botSellToken(
-          userPk.svmPK,
+      if (chain == 'sei') {
+        const response = await this.defiSeiService.sellToken(
           token,
           amount,
-          userPk.userId,
+          user,
           originalCommand,
         );
         return response;
@@ -534,7 +404,7 @@ export class ParseCommandService {
     const normalized = tweet.replace(/\s+/g, ' ').trim();
 
     const balanceRegex =
-      /\b(?:get(?:\s+me)?|check|show|see|what(?:'|’)?s|what\s+is|can\s+you\s+get|i\s+want\s+to\s+see)?\s*(?:my\s*)?(?:(solana|sol|ethereum|mantle)\s+)?balance(?:\s*(?:on|of|for)?\s*(solana|sol|ethereum|eth|mantle))?\b/i;
+      /\b(?:get(?:\s+me)?|check|show|see|what(?:'|’)?s|what\s+is|can\s+you\s+get|i\s+want\s+to\s+see)?\s*(?:my\s*)?(?:(sei|ethereum)\s+)?balance(?:\s*(?:on|of|for)?\s*(sei|ethereum|eth))?\b/i;
 
     // for directMessages
     const createAccountRegex =
@@ -561,7 +431,7 @@ export class ParseCommandService {
               { new: true },
             );
 
-            return `Account Activated\n\nEVM ADDRESS:\n${updatedUser.evmWalletAddress}`;
+            return `Account Activated\n\nEVM ADDRESS:\n${updatedUser.walletAddress}`;
           } else {
             const newUser = await this.getOrCreateUser(
               {
@@ -570,7 +440,7 @@ export class ParseCommandService {
               },
               true,
             );
-            return `Account created\n\nEVM ADDRESS:\n${newUser.evmWalletAddress}`;
+            return `Account created\n\nEVM ADDRESS:\n${newUser.walletAddress}`;
           }
         }
         const appUrl = process.env.APP_URL;
@@ -579,28 +449,19 @@ export class ParseCommandService {
         const rawChain = balanceMatch?.[1] || balanceMatch?.[2]; // either position
         const chain = this.normalizeChain(rawChain);
         // const action = balanceMatch ? 'balance' : null;
-        let solanaBalance;
         let ethBalance;
-        let mantleBalance;
+        let seiBalance;
         let formattedUserBalance;
         if (chain) {
           switch (chain) {
-            case 'solana':
-              solanaBalance = await this.userService.getUserSVMBalance(userId);
-              console.log(solanaBalance);
-              formattedUserBalance = this.formatBalances({
-                solana: solanaBalance,
-              });
-              return formattedUserBalance;
-
-            case 'mantle':
-              mantleBalance = await this.userService.getUserEVMBalance(
+            case 'sei':
+              seiBalance = await this.userService.getUserEVMBalance(
                 userId,
-                'mantle',
+                'sei',
               );
-              console.log(mantleBalance);
+              console.log(seiBalance);
               formattedUserBalance = this.formatBalances({
-                mantle: mantleBalance,
+                sei: seiBalance,
               });
               return formattedUserBalance;
 
@@ -616,57 +477,35 @@ export class ParseCommandService {
               return formattedUserBalance;
 
             default:
-              solanaBalance = await this.userService.getUserSVMBalance(userId);
-              mantleBalance = await this.userService.getUserEVMBalance(
+              seiBalance = await this.userService.getUserEVMBalance(
                 userId,
-                'mantle',
+                'sei',
               );
               ethBalance = await this.userService.getUserEVMBalance(
                 userId,
                 'ethereum',
               );
               formattedUserBalance = this.formatBalances({
+                sei: seiBalance,
                 ethereum: ethBalance,
-                mantle: mantleBalance,
-                solana: solanaBalance,
               });
               return formattedUserBalance;
           }
         }
-        solanaBalance = await this.userService.getUserSVMBalance(userId);
-        mantleBalance = await this.userService.getUserEVMBalance(
-          userId,
-          'mantle',
-        );
+
+        seiBalance = await this.userService.getUserEVMBalance(userId, 'sei');
         ethBalance = await this.userService.getUserEVMBalance(
           userId,
           'ethereum',
         );
         formattedUserBalance = this.formatBalances({
+          sei: seiBalance,
           ethereum: ethBalance,
-          mantle: mantleBalance,
         });
         return formattedUserBalance;
       } else if (createAccountMatch || getWalletMatch) {
-        return `Your Account:\n\nEVM ADDRESS:\n${user.evmWalletAddress}`;
+        return `Your Account:\n\nEVM ADDRESS:\n${user.walletAddress}`;
       }
-
-      const [decryptedSVMWallet, decryptedEvmWallet] = await Promise.all([
-        this.walletService.decryptSVMWallet(
-          process.env.DEFAULT_WALLET_PIN!,
-          user!.svmWalletDetails,
-        ),
-        this.walletService.decryptEvmWallet(
-          process.env.DEFAULT_WALLET_PIN!,
-          user!.evmWalletDetails,
-        ),
-      ]);
-
-      const userKeys: UserKey = {
-        evmPK: decryptedEvmWallet.privateKey,
-        svmPK: decryptedSVMWallet.privateKey,
-        userId,
-      };
 
       const parsed = this.parseTweetCommand(tweet);
       if (!parsed) {
@@ -681,7 +520,7 @@ export class ParseCommandService {
       if (receiver) {
         if (receiver.type === 'ens' || receiver.type === 'username') {
           //TODO:
-          to = await this.resolveENS(receiver.value, chain);
+          to = await this.resolveENS(receiver.value);
         } else {
           to = {
             address: receiver.value,
@@ -701,7 +540,7 @@ export class ParseCommandService {
               chain,
               to.address,
               amount,
-              userKeys,
+              user,
               tweet,
             );
 
@@ -726,7 +565,7 @@ export class ParseCommandService {
               token.value,
               to.address,
               amount,
-              userKeys,
+              user,
               tweet,
             );
             const startsWithHttps = /^https/.test(stableResponse);
@@ -753,10 +592,10 @@ export class ParseCommandService {
         //   );
 
         case 'buy':
-          return this.handleBuy(chain, token.value, amount, userKeys, tweet);
+          return this.handleBuy(chain, token.value, amount, user, tweet);
 
         case 'sell':
-          return this.handleSell(chain, token.value, amount, userKeys, tweet);
+          return this.handleSell(chain, token.value, amount, user, tweet);
       }
     } catch (error) {
       console.log(error);
@@ -770,29 +609,14 @@ export class ParseCommandService {
     let existingUser = await this.userModel.findOne({ userId: user.id });
 
     if (!existingUser) {
-      const newEvmWallet = await this.walletService.createEvmWallet();
-      const newSolanaWallet = await this.walletService.createSVMWallet();
-
-      const [encryptedEvmWalletDetails, encryptedSvmWalletDetails] =
-        await Promise.all([
-          this.walletService.encryptEvmWallet(
-            process.env.DEFAULT_WALLET_PIN!,
-            newEvmWallet.privateKey,
-          ),
-          this.walletService.encryptSVMWallet(
-            process.env.DEFAULT_WALLET_PIN!,
-            newSolanaWallet.privateKey,
-          ),
-        ]);
+      const newEvmWallet = await this.dynamicWalletService.createWallet();
 
       existingUser = new this.userModel({
         userId: user.id,
         userName: user.username,
-        evmWalletDetails: encryptedEvmWalletDetails.json,
-        evmWalletAddress: newEvmWallet.address,
-        svmWalletDetails: encryptedSvmWalletDetails.json,
-        svmWalletAddress: newSolanaWallet.address,
-        active: dm ? true : false, // make account active ii it was a directmessage comamnd
+        walletAddress: newEvmWallet.accountAddress,
+        walletID: newEvmWallet.walletId,
+        active: dm ? true : false, // make account active if it was a directmessage comamnd
       });
       return existingUser.save();
     }
@@ -803,9 +627,9 @@ export class ParseCommandService {
   private normalizeChain = (raw) => {
     if (!raw) return null;
     const value = raw.toLowerCase();
-    if (value === 'sol' || value === 'solana') return 'solana';
+    if (value === 'sei' || value === 'sei') return 'sei';
     if (value === 'eth' || value === 'ethereum') return 'ethereum';
-    if (value === 'mantle') return 'mantle';
+    if (value === 'sei') return 'sei';
     return null;
   };
 

@@ -16,30 +16,18 @@ export class User {
   displayName: string;
 
   @Prop()
-  evmWalletAddress: string;
+  walletAddress: string;
 
   @Prop()
-  svmWalletAddress: string;
-
-  @Prop()
-  evmWalletDetails: string;
-
-  @Prop()
-  svmWalletDetails: string;
+  walletID: string;
 
   @Prop({ default: true })
   active: boolean;
 
-  @Prop({ default: false })
-  isBaseSmartWallet: boolean;
-
-  @Prop()
-  baseSmartWallet: string;
-
   @Prop({
     type: [String],
-    enum: ['solana', 'base', 'ethereum', 'mantle', 'mode', 'arbitrum'],
-    default: ['base', 'solana'],
+    enum: ['sei', 'ethereum'],
+    default: ['sei'],
   })
   chains: string[];
 }

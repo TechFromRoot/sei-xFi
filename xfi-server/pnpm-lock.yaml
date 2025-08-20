@@ -14,6 +14,12 @@ importers:
       '@ai-sdk/openai':
         specifier: ^1.3.22
         version: 1.3.24(zod@3.25.76)
+      '@dynamic-labs-wallet/core':
+        specifier: ^0.0.139
+        version: 0.0.139
+      '@dynamic-labs-wallet/node-evm':
+        specifier: ^0.0.139
+        version: 0.0.139(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))
       '@metaplex-foundation/js':
         specifier: ^0.20.1
         version: 0.20.1(@types/node@20.19.11)(arweave@1.15.7)(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.9.2)(utf-8-validate@5.0.10)
@@ -433,6 +439,23 @@ packages:
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
+
+  '@dynamic-labs-wallet/core@0.0.139':
+    resolution: {integrity: sha512-iNV+BQ7ghcGR+WUQ9fPb/Jgz7pPGznevCsJ7CnOJIZil2GdL1btXA4NfTWxWkF9UR+tmNJE/GqmKSwzKvh1srA==}
+
+  '@dynamic-labs-wallet/node-evm@0.0.139':
+    resolution: {integrity: sha512-/F9sfeXVjMSkjuPjB575FHiTkeRfeDeobXT9a3LSdWWve65APY5Th+n6qGnH62cbVSWbAgtzM6SrxNBLZM9I7A==}
+    peerDependencies:
+      viem: ^2.22.1
+
+  '@dynamic-labs-wallet/node@0.0.139':
+    resolution: {integrity: sha512-Gfa3S/ijt39o+grWuJXiejLU27Hy740ZsTs2YiKxWe6whzSpsnlxyCwJ9F+4t/fhpLjE0RI4TCpTRhS5PaST9g==}
+
+  '@dynamic-labs/logger@4.29.0':
+    resolution: {integrity: sha512-1hg1rM3EFW0wle5GBHMQLjUvVHsrHj53TrJz+h5og1sVWU8CYdiIPApcupny2EkgRHNpN8Q2h4gsTIa0Hwwdtg==}
+
+  '@dynamic-labs/sdk-api-core@0.0.753':
+    resolution: {integrity: sha512-fs4s70BsxMeXYFQXkVmfC7hKYgjwOFMlU2QO4JqLsfzeuIRUkdxYekTcNjvHym+h9oiWc/a6+/ea5XYZOvHXdQ==}
 
   '@eslint-community/eslint-utils@4.7.0':
     resolution: {integrity: sha512-dyybb3AcajC7uha6CvhdVRJqaKyn7w2YKqKyAN37NKYgZT36w+iRb0Dymmc5qEJ549c/S31cMMSFd75bteCpCw==}
@@ -938,6 +961,10 @@ packages:
   '@noble/hashes@1.4.0':
     resolution: {integrity: sha512-V1JJ1WTRUqHHrOSh597hURcMqVKVGL/ea3kv0gSnEdsEZ0/+VyPghM1lMNGc00z7CIQorSvbKpuJkxvuHbvdbg==}
     engines: {node: '>= 16'}
+
+  '@noble/hashes@1.7.1':
+    resolution: {integrity: sha512-B8XBPsn4vT/KJAGqDzbwztd+6Yte3P4V7iafm24bxgDe/mlRuK6xmWPuCNrKt2vDafZ8MfJLlchDG/vYafQEjQ==}
+    engines: {node: ^14.21.3 || >=16}
 
   '@noble/hashes@1.8.0':
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
@@ -1758,6 +1785,9 @@ packages:
 
   axios@1.11.0:
     resolution: {integrity: sha512-1Lx3WLFQWm3ooKDYZD1eXmoGO9fxYQjrycfHFC8P0sCfQVXyROp0p9PFWBehewBOdCwHc+f/b8I0fMto5eSfwA==}
+
+  axios@1.9.0:
+    resolution: {integrity: sha512-re4CqKTJaURpzbLHtIi6XpDv20/CnpXOtjRY5/CU32L8gU8ek9UIivcfvSWvmKEngmVbrUtPpdDwWDWL7DNHvg==}
 
   babel-jest@29.7.0:
     resolution: {integrity: sha512-BrvGY3xZSwEcCzKvKsCi2GgHqDqsYkOP4/by5xCgIwGXQxIEh+8ew3gmrE1y7XRR6LHZIj6yLYnUi/mm2KXKBg==}
@@ -5878,6 +5908,36 @@ snapshots:
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
 
+  '@dynamic-labs-wallet/core@0.0.139':
+    dependencies:
+      '@dynamic-labs/sdk-api-core': 0.0.753
+      axios: 1.9.0
+      uuid: 11.1.0
+    transitivePeerDependencies:
+      - debug
+
+  '@dynamic-labs-wallet/node-evm@0.0.139(viem@2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76))':
+    dependencies:
+      '@dynamic-labs-wallet/node': 0.0.139
+      viem: 2.33.3(bufferutil@4.0.9)(typescript@5.9.2)(utf-8-validate@5.0.10)(zod@3.25.76)
+    transitivePeerDependencies:
+      - debug
+
+  '@dynamic-labs-wallet/node@0.0.139':
+    dependencies:
+      '@dynamic-labs-wallet/core': 0.0.139
+      '@dynamic-labs/logger': 4.29.0
+      '@noble/hashes': 1.7.1
+      uuid: 11.1.0
+    transitivePeerDependencies:
+      - debug
+
+  '@dynamic-labs/logger@4.29.0':
+    dependencies:
+      eventemitter3: 5.0.1
+
+  '@dynamic-labs/sdk-api-core@0.0.753': {}
+
   '@eslint-community/eslint-utils@4.7.0(eslint@8.57.1)':
     dependencies:
       eslint: 8.57.1
@@ -6929,6 +6989,8 @@ snapshots:
   '@noble/hashes@1.3.2': {}
 
   '@noble/hashes@1.4.0': {}
+
+  '@noble/hashes@1.7.1': {}
 
   '@noble/hashes@1.8.0': {}
 
@@ -8086,6 +8148,14 @@ snapshots:
   axios@1.11.0(debug@4.4.1):
     dependencies:
       follow-redirects: 1.15.11(debug@4.4.1)
+      form-data: 4.0.4
+      proxy-from-env: 1.1.0
+    transitivePeerDependencies:
+      - debug
+
+  axios@1.9.0:
+    dependencies:
+      follow-redirects: 1.15.11
       form-data: 4.0.4
       proxy-from-env: 1.1.0
     transitivePeerDependencies:

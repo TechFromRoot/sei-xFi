@@ -3,8 +3,11 @@ Content-Type: application/json
 
 {  
     
-     "prompt": "tip 0.1 MNT to 0x2189878C4963B84Fd737640db71D7650214c4A18"
+     "prompt": "tip 0.1 SEI to ekete.eth"
  
 }
 
-    # "prompt": "buy FQgtfugBdpFN7PZ6NdPrZpVLDBrPGxXesi4gVu3vErhY for 1 sol "
+
+# {
+#          "prompt": "sell 25052.055176 0x95597eb8d227a7c4b4f5e807a815c5178ee6dbe1"
+# }

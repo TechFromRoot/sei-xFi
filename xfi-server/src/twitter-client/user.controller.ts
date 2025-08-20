@@ -41,17 +41,11 @@ export class UserController {
     const user = await this.userService.getUserById(userId);
     return {
       userId: userId,
-      evmWalletAddress: user.evmWalletAddress,
-      svmWalletAddress: user.svmWalletAddress,
+      evmWalletAddress: user.walletAddress,
       chains: user.chains,
       username: user.userName,
       name: user.displayName,
     };
-  }
-
-  @Get(':userId/svm-balance')
-  async getUserSvmAssets(@Param('userId') userId: string): Promise<SolAsset[]> {
-    return await this.userService.getUserSVMBalance(userId);
   }
 
   @Get(':userId/evm-balance')
