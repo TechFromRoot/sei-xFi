@@ -1,46 +1,40 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { sei } from 'viem/chains';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from 'src/database/schemas/user.schema';
 import { Model } from 'mongoose';
 import { createWalletClient, http } from 'viem';
+import { DynamicEvmWalletClient } from '@dynamic-labs-wallet/node-evm';
+// import { ThresholdSignatureScheme } from '@dynamic-labs-wallet/core';
 
-async function loadDynamicWalletModule() {
-  const { DynamicEvmWalletClient } = await import(
-    '@dynamic-labs-wallet/node-evm'
-  );
-  const { ThresholdSignatureScheme } = await import(
-    '@dynamic-labs-wallet/core'
-  );
-  return { DynamicEvmWalletClient, ThresholdSignatureScheme };
+export declare enum ThresholdSignatureScheme {
+  TWO_OF_TWO = 'TWO_OF_TWO',
+  TWO_OF_THREE = 'TWO_OF_THREE',
+  THREE_OF_FIVE = 'THREE_OF_FIVE',
 }
 
 @Injectable()
-export class DynamicWalletService implements OnModuleInit {
+export class DynamicWalletService {
   private readonly logger = new Logger(DynamicWalletService.name);
-  private DynamicEvmWalletClient: any;
-  private ThresholdSignatureScheme: any;
-  private client: any;
 
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  private client: DynamicEvmWalletClient;
 
-  async onModuleInit() {
-    const { DynamicEvmWalletClient, ThresholdSignatureScheme } =
-      await loadDynamicWalletModule();
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {
+    this.initClient();
+  }
 
-    this.DynamicEvmWalletClient = DynamicEvmWalletClient;
-    this.ThresholdSignatureScheme = ThresholdSignatureScheme;
-
-    this.client = new this.DynamicEvmWalletClient({
+  private async initClient() {
+    // const { DynamicEvmWalletClient } = await import(
+    //   '@dynamic-labs-wallet/node-evm'
+    // );
+    this.client = new DynamicEvmWalletClient({
       authToken: process.env.DYNAMIC_AUTH_TOKEN!,
       environmentId: process.env.DYNAMIC_ENVIRONMENT_ID!,
     });
-
-    await this.client.authenticateApiToken(process.env.DYNAMIC_AUTH_TOKEN!);
-    this.logger.log('Dynamic Wallet Client initialized & authenticated');
   }
 
   async authenticate() {
+    console.log(this.client);
     await this.client.authenticateApiToken(process.env.DYNAMIC_AUTH_TOKEN!);
     return this.client;
   }
@@ -50,7 +44,7 @@ export class DynamicWalletService implements OnModuleInit {
       const authenticatedClient = await this.authenticate();
 
       const evmWallet = await authenticatedClient.createWalletAccount({
-        thresholdSignatureScheme: this.ThresholdSignatureScheme.TWO_OF_TWO,
+        thresholdSignatureScheme: ThresholdSignatureScheme.TWO_OF_TWO,
         onError: (error: Error) => {
           this.logger.error('Error creating wallet:', error.message);
           throw error;

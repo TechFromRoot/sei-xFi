@@ -18,13 +18,7 @@ import { User } from 'src/database/schemas/user.schema';
 // import { DynamicEvmWalletClient } from '@dynamic-labs-wallet/node-evm';
 import { DynamicWalletService } from 'src/wallet/dynamic-wallet.service';
 import { sei } from 'viem/chains';
-// import { openai } from '@ai-sdk/openai';
-// import { generateText } from 'ai';
-// import { http } from 'viem';
-// import { createWalletClient } from 'viem';
-// import { privateKeyToAccount } from 'viem/accounts';
-// import { sei } from 'viem/chains';
-// import { Symphony } from 'symphony-sdk/viem';
+
 const {
   Symphony,
   getRouteDetails,
