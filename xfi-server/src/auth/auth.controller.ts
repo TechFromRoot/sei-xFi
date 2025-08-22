@@ -1,8 +1,25 @@
 import { Body, Controller, Post, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
-import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiProperty,
+} from '@nestjs/swagger';
 import { CreateUserDto } from 'src/twitter-client/dto/user.dto';
+import { UserResponseDto } from 'src/twitter-client/dto/response.dto';
+
+export class AuthResponseDto {
+  @ApiProperty({
+    description: 'State if the user is authenticated',
+    example: true,
+  })
+  authenticated: boolean;
+
+  @ApiProperty({ type: () => UserResponseDto })
+  user: UserResponseDto;
+}
 
 @Controller('auth')
 export class AuthController {
@@ -11,6 +28,7 @@ export class AuthController {
   @Post('login')
   @ApiOperation({ summary: 'Signin a user using twitter' })
   @ApiBody({ type: CreateUserDto })
+  @ApiOkResponse({ type: AuthResponseDto })
   async authenticateUser(
     @Body() createUserDto: CreateUserDto,
     @Res({ passthrough: true }) res: Response,

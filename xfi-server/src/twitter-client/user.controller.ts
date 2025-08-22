@@ -1,9 +1,10 @@
 import { Controller, Body, Patch, Param, Get, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
+import { UpdateUserDto } from './dto/user.dto';
 import { TwitterApi } from 'twitter-api-v2';
-import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import { ApiBody, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
+import { UserResponseDto } from './dto/response.dto';
 
 @Controller('users')
 export class UserController {
@@ -20,7 +21,8 @@ export class UserController {
   @Patch(':userId')
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update a  User' })
-  @ApiBody({ type: CreateUserDto })
+  @ApiBody({ type: UpdateUserDto })
+  @ApiOkResponse({ type: UserResponseDto })
   async updateUser(
     @Param('userId') userId: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -30,6 +32,7 @@ export class UserController {
 
   @Get(':userId')
   @ApiOperation({ summary: 'fetch a user' })
+  @ApiOkResponse({ type: UserResponseDto })
   async getUser(@Param('userId') userId: string) {
     // let twitterData: any = {};
     // try {

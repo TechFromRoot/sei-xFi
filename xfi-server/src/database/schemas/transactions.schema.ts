@@ -9,7 +9,7 @@ export class Transaction {
   userId: string;
 
   @Prop({ type: String, enum: ['buy', 'sell', 'send', 'tip'], required: true })
-  transactionType: 'buy' | 'sell' | 'send' | 'tip';
+  transactionType: 'buy' | 'sell' | 'send' | 'tip' | 'swap';
 
   @Prop({
     type: String,
