@@ -9,7 +9,6 @@ import { XfiDefiEthereumService } from 'src/xfi-defi/xfi-defi-ethereum.service';
 import { TwitterClientBase } from './base.provider';
 import { UserService } from './user.service';
 import { XfiDefiSeiService } from 'src/xfi-defi/xfi-defi-sei.service';
-import { DynamicWalletService } from 'src/wallet/dynamic-wallet.service';
 
 type Action = 'buy' | 'sell' | 'send' | 'tip';
 type TokenType = 'native' | 'stable' | 'token';
@@ -26,10 +25,6 @@ interface Receiver {
   value?: string;
   userId?: string;
 }
-// interface UserKey {
-//   evmPK: string;
-//   userId: string;
-// }
 
 interface ParsedCommand {
   action: Action;
@@ -40,7 +35,7 @@ interface ParsedCommand {
 }
 
 // --- Helper Data ---
-const NATIVE_TOKENS = ['sol', 'eth', 'mnt', 'sei'];
+const NATIVE_TOKENS = ['eth', 'sei'];
 const STABLE_TOKENS = ['usdc', 'usdt'];
 
 @Injectable()
@@ -50,7 +45,6 @@ export class ParseCommandService {
   private provider = new ethers.JsonRpcProvider(process.env.SEI_RPC);
   constructor(
     private readonly walletService: WalletService,
-    private readonly dynamicWalletService: DynamicWalletService,
     private readonly defiEthereumService: XfiDefiEthereumService,
     private readonly defiSeiService: XfiDefiSeiService,
     private readonly twitterClientBase: TwitterClientBase,
@@ -421,13 +415,13 @@ export class ParseCommandService {
       this.logger.log(tweet);
       const user = await this.userModel.findOne({ userId });
 
-      if (!user || !user.active) {
+      if (!user || !user.isActive) {
         // === CREATE / ACTIVATE ACCOUNT ===
         if (createAccountMatch) {
           if (user) {
             const updatedUser = await this.userModel.findOneAndUpdate(
               { userId: user.userId },
-              { active: true },
+              { isActive: true },
               { new: true },
             );
 
@@ -609,14 +603,20 @@ export class ParseCommandService {
     let existingUser = await this.userModel.findOne({ userId: user.id });
 
     if (!existingUser) {
-      const newEvmWallet = await this.dynamicWalletService.createWallet();
+      const newEvmWallet = await this.walletService.createEvmWallet();
+
+      const encryptedEvmWalletDetails =
+        await this.walletService.encryptEvmWallet(
+          process.env.DYNAMIC_WALLET_SECRET!,
+          newEvmWallet.privateKey,
+        );
 
       existingUser = new this.userModel({
         userId: user.id,
         userName: user.username,
-        walletAddress: newEvmWallet.accountAddress,
-        walletID: newEvmWallet.walletId,
-        active: dm ? true : false, // make account active if it was a directmessage comamnd
+        walletAddress: newEvmWallet.address,
+        walletDetails: encryptedEvmWalletDetails.json,
+        isActive: dm ? true : false, // make account active if it was a directmessage comamnd
       });
       return existingUser.save();
     }

@@ -9,7 +9,6 @@ import { User, UserDocument } from 'src/database/schemas/user.schema';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { Transaction } from 'src/database/schemas/transactions.schema';
 import { WalletService } from 'src/wallet/wallet.service';
-import { DynamicWalletService } from 'src/wallet/dynamic-wallet.service';
 
 export interface SolAsset {
   tokenName: string;
@@ -24,20 +23,24 @@ export class UserService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly walletService: WalletService,
-    private readonly dynamicWalletService: DynamicWalletService,
     @InjectModel(Transaction.name)
     readonly transactionModel: Model<Transaction>,
   ) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     try {
-      const newEvmWallet = await this.dynamicWalletService.createWallet();
+      const newEvmWallet = await this.walletService.createEvmWallet();
+      const encryptedEvmWalletDetails =
+        await this.walletService.encryptEvmWallet(
+          process.env.DYNAMIC_WALLET_SECRET!,
+          newEvmWallet.privateKey,
+        );
 
       const user = new this.userModel({
         userId: createUserDto.userId,
         userName: createUserDto.userName,
-        walletAddress: newEvmWallet.accountAddress,
-        walletID: newEvmWallet.walletId,
+        walletAddress: newEvmWallet.address,
+        walletDetails: encryptedEvmWalletDetails.json,
         chains: createUserDto.chains,
       });
       return user.save();
@@ -62,7 +65,7 @@ export class UserService {
   async getUserById(userId: string): Promise<User> {
     const user = await this.userModel
       .findOne({ userId })
-      .select('-evmWalletDetails')
+      .select('-walletDetails')
       .exec();
 
     if (!user) {
@@ -74,7 +77,7 @@ export class UserService {
   async checkIfUserExists(userId: string): Promise<User> {
     return await this.userModel
       .findOne({ userId })
-      .select('-evmWalletDetails -svmWalletDetails')
+      .select('-walletDetails')
       .exec();
   }
 

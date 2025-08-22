@@ -6,13 +6,13 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { ethers } from 'ethers';
 import { User } from 'src/database/schemas/user.schema';
-import { DynamicWalletService } from 'src/wallet/dynamic-wallet.service';
+
 const {
   Symphony,
   getRouteDetails,
   swap,
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-} = require('symphony-sdk/viem');
+} = require('symphony-sdk/ethers');
 
 @Injectable()
 export class XfiDefiSeiService {
@@ -22,7 +22,6 @@ export class XfiDefiSeiService {
   constructor(
     private readonly httpService: HttpService,
     private readonly walletService: WalletService,
-    private readonly dynamicWalletService: DynamicWalletService,
     @InjectModel(Transaction.name)
     readonly transactionModel: Model<Transaction>,
   ) {}
@@ -63,7 +62,7 @@ export class XfiDefiSeiService {
         try {
           await new this.transactionModel({
             ...data,
-            txHash: txn,
+            txHash: receipt.transactionHash,
           }).save();
         } catch (err) {
           console.error('Failed to save transaction:', err.message);
@@ -254,7 +253,6 @@ export class XfiDefiSeiService {
     originalCommand: string,
   ) {
     console.log('Swapping ....');
-
     const nativeAddress = this.symphony.getConfig().nativeAddress;
     const tokenIn = nativeAddress;
     const decryptedEvmWallet = await this.walletService.decryptEvmWallet(
@@ -273,6 +271,7 @@ export class XfiDefiSeiService {
       includesNative = true;
       console.log('Swapping ...., isNative');
     }
+
     const transaction = await swap({
       route: route.route,
       includesNative,

@@ -1,13 +1,13 @@
 POST http://localhost:3827/twitter-client
 Content-Type: application/json
 
-{  
+# {  
     
-     "prompt": "tip 0.1 SEI to ekete.eth"
+#      "prompt": "tip 0.01 SEI to ekete.eth"
  
-}
-
-
-# {
-#          "prompt": "sell 25052.055176 0x95597eb8d227a7c4b4f5e807a815c5178ee6dbe1"
 # }
+
+
+{
+         "prompt": "sell all 0x95597eb8d227a7c4b4f5e807a815c5178ee6dbe1"
+}
