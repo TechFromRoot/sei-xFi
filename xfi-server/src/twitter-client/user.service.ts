@@ -27,7 +27,7 @@ export class UserService {
     readonly transactionModel: Model<Transaction>,
   ) {}
 
-  async createUser(createUserDto: CreateUserDto): Promise<User> {
+  async createUser(createUserDto: CreateUserDto): Promise<UserDocument> {
     try {
       const newEvmWallet = await this.walletService.createEvmWallet();
       const encryptedEvmWalletDetails =

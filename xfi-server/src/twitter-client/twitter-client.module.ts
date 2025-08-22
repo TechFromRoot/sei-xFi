@@ -21,9 +21,11 @@ import {
   DirectMessageSchema,
 } from 'src/database/schemas/directMessage.schema';
 import { Cookies, CookiesSchema } from 'src/database/schemas/cookie.schema';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
+    JwtModule,
     MongooseModule.forFeature([{ name: Memory.name, schema: MemorySchema }]),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     MongooseModule.forFeature([

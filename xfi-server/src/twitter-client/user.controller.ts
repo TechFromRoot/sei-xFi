@@ -1,22 +1,24 @@
-import { Controller, Post, Body, Patch, Param, Get } from '@nestjs/common';
+import { Controller, Body, Patch, Param, Get, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { TwitterApi } from 'twitter-api-v2';
 import { ApiBody, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
 
 @Controller('users')
 export class UserController {
   private twitterClient = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  @ApiOperation({ summary: 'Create a new User' })
-  @ApiBody({ type: CreateUserDto })
-  async createUser(@Body() createUserDto: CreateUserDto) {
-    return this.userService.createUser(createUserDto);
-  }
+  // @Post()
+  // @ApiOperation({ summary: 'Create a new User' })
+  // @ApiBody({ type: CreateUserDto })
+  // async createUser(@Body() createUserDto: CreateUserDto) {
+  //   return this.userService.createUser(createUserDto);
+  // }
 
   @Patch(':userId')
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Update a  User' })
   @ApiBody({ type: CreateUserDto })
   async updateUser(
