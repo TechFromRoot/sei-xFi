@@ -12,8 +12,8 @@ async function bootstrap() {
   const regexWhitelist = [
     /^http:\/\/localhost:\d+$/, // localhost:port
     /^http:\/\/127\.0\.0\.1:\d+$/, // 127.0.0.1:port
-    /^https:\/\/.*\.?xfibot\.com$/, // any subdomain of discreet.fan
-    /^https:\/\/.*\.?xfibot\.com$/, // any subdomain of discreet.fans
+    /^https:\/\/.*\.?xfibot\.xyz$/, // any subdomain of discreet.fan
+    /^https:\/\/.*\.?xfibot\.xyz$/, // any subdomain of discreet.fans
   ];
 
   app.enableCors({
