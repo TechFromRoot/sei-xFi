@@ -12,7 +12,7 @@ async function bootstrap() {
     .setDescription('sei xFi Server APIs')
     .setVersion('1.0.0')
     .addServer(`http://localhost:${PORT}`, 'Local environment')
-    .addServer(`https://api.xfibot.xyz/sei/`, 'Production Server')
+    .addServer(`https://api.xfibot.xyz/xfi/`, 'Production Server')
 
     .build();
 
