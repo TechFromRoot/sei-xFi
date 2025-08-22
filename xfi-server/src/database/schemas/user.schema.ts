@@ -19,10 +19,10 @@ export class User {
   walletAddress: string;
 
   @Prop()
-  walletID: string;
+  walletDetails: string;
 
   @Prop({ default: true })
-  active: boolean;
+  isActive: boolean;
 
   @Prop({
     type: [String],

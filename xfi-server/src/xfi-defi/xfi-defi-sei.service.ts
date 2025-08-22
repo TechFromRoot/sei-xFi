@@ -4,21 +4,9 @@ import { HttpService } from '@nestjs/axios';
 import { Transaction } from 'src/database/schemas/transactions.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-// import { ethers } from 'ethers';
-import {
-  createWalletClient,
-  encodeFunctionData,
-  erc20Abi,
-  formatEther,
-  http,
-  parseEther,
-  parseUnits,
-} from 'viem';
+import { ethers } from 'ethers';
 import { User } from 'src/database/schemas/user.schema';
-// import { DynamicEvmWalletClient } from '@dynamic-labs-wallet/node-evm';
 import { DynamicWalletService } from 'src/wallet/dynamic-wallet.service';
-import { sei } from 'viem/chains';
-
 const {
   Symphony,
   getRouteDetails,
@@ -30,8 +18,7 @@ const {
 export class XfiDefiSeiService {
   private readonly logger = new Logger(XfiDefiSeiService.name);
   private symphony = new Symphony();
-  // private provider = new ethers.JsonRpcProvider(process.env.SEI_RPC);
-  // private client: DynamicEvmWalletClient;
+  private provider = new ethers.JsonRpcProvider(process.env.SEI_RPC);
   constructor(
     private readonly httpService: HttpService,
     private readonly walletService: WalletService,
@@ -47,42 +34,32 @@ export class XfiDefiSeiService {
     data: Partial<Transaction>,
   ) {
     try {
-      const authenticatedClient =
-        await this.dynamicWalletService.authenticate();
+      const decryptedEvmWallet = await this.walletService.decryptEvmWallet(
+        process.env.DYNAMIC_WALLET_SECRET!,
+        user.walletDetails,
+      );
 
-      const publicClient = authenticatedClient.createViemPublicClient({
-        chain: sei,
-        rpcUrl: process.env.SEI_RPC,
-      });
-
-      const balance = await publicClient.getBalance({
-        address: user.walletAddress as `0x${string}`,
-      });
+      const { balance } = await this.walletService.getNativeEthBalance(
+        user.walletAddress as `0x${string}`,
+        process.env.SEI_RPC,
+      );
 
       this.logger.log(balance);
 
-      if (Number(formatEther(balance)) < Number(amount)) {
+      if (balance < Number(amount)) {
         return 'Insufficient balance.';
       }
 
-      const nonce = await publicClient.getTransactionCount({
-        address: user.walletAddress as `0x${string}`,
-      });
-
-      const txRequest = await publicClient.prepareTransactionRequest({
-        chain: sei,
-        to: reciever as `0x${string}`,
-        value: parseEther(amount),
-        kzg: undefined,
-        nonce,
-      });
-
-      const txn = await this.dynamicWalletService.signTransaction(
-        user,
-        txRequest,
+      const txn = await this.walletService.transferEth(
+        decryptedEvmWallet.privateKey,
+        reciever,
+        parseFloat(amount),
+        process.env.SEI_RPC,
       );
+      const receipt =
+        txn?.wait && typeof txn.wait === 'function' ? await txn.wait() : txn;
 
-      if (txn) {
+      if (receipt.status === 1) {
         try {
           await new this.transactionModel({
             ...data,
@@ -91,7 +68,7 @@ export class XfiDefiSeiService {
         } catch (err) {
           console.error('Failed to save transaction:', err.message);
         }
-        return `https://seitrace.com/tx/${txn}`;
+        return `https://seitrace.com/tx/${receipt.transactionHash}`;
       }
       return;
     } catch (error) {
@@ -107,64 +84,44 @@ export class XfiDefiSeiService {
     amount: string,
     reciever: string,
     data: Partial<Transaction>,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     decimals?: number,
   ) {
     try {
-      const authenticatedClient =
-        await this.dynamicWalletService.authenticate();
+      const decryptedEvmWallet = await this.walletService.decryptEvmWallet(
+        process.env.DYNAMIC_WALLET_SECRET!,
+        user.walletDetails,
+      );
 
-      const publicClient = authenticatedClient.createViemPublicClient({
-        chain: sei,
-        rpcUrl: process.env.SEI_RPC,
-      });
+      const { balance } = await this.walletService.getERC20Balance(
+        user.walletAddress as `0x${string}`,
+        token,
+        process.env.SEI_RPC,
+      );
+      this.logger.log('Balance:', balance);
 
-      const balance = await publicClient.readContract({
-        abi: erc20Abi,
-        address: token as `0x${string}`,
-        functionName: 'balanceOf',
-        args: [user.walletAddress as `0x${string}`],
-      });
-
-      this.logger.log('Token balance:', balance.toString());
-
-      if (Number(balance) < Number(amount)) {
+      if (balance < Number(amount)) {
         return 'Insufficient balance.';
       }
 
-      const nonce = await publicClient.getTransactionCount({
-        address: user.walletAddress as `0x${string}`,
-      });
-
-      const txRequest = await publicClient.prepareTransactionRequest({
-        chain: sei,
-        to: token as `0x${string}`,
-        data: encodeFunctionData({
-          abi: erc20Abi,
-          functionName: 'transfer',
-          args: [
-            reciever as `0x${string}`,
-            parseUnits(amount, decimals ? decimals : 18),
-          ],
-        }),
-        kzg: undefined,
-        nonce,
-      });
-
-      const txn = await this.dynamicWalletService.signTransaction(
-        user,
-        txRequest,
+      const response = await this.walletService.transferERC20(
+        decryptedEvmWallet.privateKey,
+        reciever,
+        token,
+        parseFloat(amount),
+        process.env.SEI_RPC,
       );
 
-      if (txn) {
+      if (response.signature) {
         try {
           await new this.transactionModel({
             ...data,
-            txHash: txn,
+            txHash: response.signature,
           }).save();
         } catch (err) {
           console.error('Failed to save transaction:', err.message);
         }
-        return `https://seitrace.com/tx/${txn}`;
+        return `https://seitrace.com/tx/${response.signature}`;
       }
       return;
     } catch (error) {
@@ -255,11 +212,13 @@ export class XfiDefiSeiService {
     console.log('Swapping ....');
 
     const nativeAddress = this.symphony.getConfig().nativeAddress;
-    const walletClient = createWalletClient({
-      chain: sei,
-      transport: http(process.env.SEI_RPC),
-      account: user.walletAddress as `0x${string}`,
-    });
+    const decryptedEvmWallet = await this.walletService.decryptEvmWallet(
+      process.env.DYNAMIC_WALLET_SECRET!,
+      user.walletDetails,
+    );
+
+    const provider = new ethers.JsonRpcProvider(process.env.SEI_RPC);
+    const signer = new ethers.Wallet(decryptedEvmWallet.privateKey, provider);
     let includesNative = false;
 
     const route = await this.symphony.getRoute(tokenIn, tokenOut, amount);
@@ -271,7 +230,7 @@ export class XfiDefiSeiService {
     const transaction = await swap({
       route: route.route,
       includesNative,
-      walletClient,
+      signer,
       options: {
         skipApproval: true,
         skipCheckApproval: true,
@@ -298,11 +257,12 @@ export class XfiDefiSeiService {
 
     const nativeAddress = this.symphony.getConfig().nativeAddress;
     const tokenIn = nativeAddress;
-    const walletClient = createWalletClient({
-      chain: sei,
-      transport: http(process.env.SEI_RPC),
-      account: user.walletAddress as `0x${string}`,
-    });
+    const decryptedEvmWallet = await this.walletService.decryptEvmWallet(
+      process.env.DYNAMIC_WALLET_SECRET!,
+      user.walletDetails,
+    );
+    const provider = new ethers.JsonRpcProvider(process.env.SEI_RPC);
+    const signer = new ethers.Wallet(decryptedEvmWallet.privateKey, provider);
     let includesNative = false;
     console.log(tokenIn, tokenOut, amount);
     const route = await this.symphony.getRoute(tokenIn, tokenOut, amount);
@@ -316,7 +276,7 @@ export class XfiDefiSeiService {
     const transaction = await swap({
       route: route.route,
       includesNative,
-      walletClient,
+      signer,
       options: {
         skipApproval: true,
         skipCheckApproval: true,
@@ -364,11 +324,12 @@ export class XfiDefiSeiService {
     console.log(amount);
     const nativeAddress = this.symphony.getConfig().nativeAddress;
     const tokenOut = nativeAddress;
-    const walletClient = createWalletClient({
-      chain: sei,
-      transport: http(process.env.SEI_RPC),
-      account: user.walletAddress as `0x${string}`,
-    });
+    const decryptedEvmWallet = await this.walletService.decryptEvmWallet(
+      process.env.DYNAMIC_WALLET_SECRET!,
+      user.walletDetails,
+    );
+    const provider = new ethers.JsonRpcProvider(process.env.SEI_RPC);
+    const signer = new ethers.Wallet(decryptedEvmWallet.privateKey, provider);
     let includesNative = false;
 
     const route = await this.symphony.getRoute(tokenIn, tokenOut, amount);
@@ -380,7 +341,7 @@ export class XfiDefiSeiService {
     const transaction = await swap({
       route: route.route,
       includesNative,
-      walletClient,
+      signer,
       options: {
         skipApproval: true,
         skipCheckApproval: true,
