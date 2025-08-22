@@ -4,7 +4,7 @@ import { HttpService } from '@nestjs/axios';
 import { Transaction } from 'src/database/schemas/transactions.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ethers } from 'ethers';
+import { ethers, parseEther } from 'ethers';
 import { User } from 'src/database/schemas/user.schema';
 
 const {
@@ -67,7 +67,8 @@ export class XfiDefiSeiService {
         } catch (err) {
           console.error('Failed to save transaction:', err.message);
         }
-        return `https://seitrace.com/tx/${receipt.transactionHash}`;
+        // return `https://seitrace.com/tx/${receipt.transactionHash}`;
+        return `Sent ${amount} $SEI to ${reciever}\nhttps://seitrace.com/tx/${receipt.transactionHash}`;
       }
       return;
     } catch (error) {
@@ -120,7 +121,7 @@ export class XfiDefiSeiService {
         } catch (err) {
           console.error('Failed to save transaction:', err.message);
         }
-        return `https://seitrace.com/tx/${response.signature}`;
+        return `Sent ${amount} $${token} to ${reciever}\nhttps://seitrace.com/tx/${response.signature}`;
       }
       return;
     } catch (error) {
@@ -206,7 +207,7 @@ export class XfiDefiSeiService {
     tokenOut: string,
     amount: string,
     user: User,
-    slippage?: string,
+    data: Partial<Transaction>,
   ) {
     console.log('Swapping ....');
 
@@ -235,14 +236,23 @@ export class XfiDefiSeiService {
         skipCheckApproval: true,
       },
       slippage: {
-        slippageAmount: slippage || '1',
+        slippageAmount: '1',
         isRaw: true,
         isBps: false,
       },
     });
 
     console.log('Transaction Hash:', transaction);
-
+    if (transaction.swapReceipt.hash) {
+      try {
+        await new this.transactionModel({
+          ...data,
+          txHash: transaction.swapReceipt.hash,
+        }).save();
+      } catch (err) {
+        console.error('Failed to save transaction:', err.message);
+      }
+    }
     return `https://seitrace.com/tx/${transaction.swapReceipt.hash}`;
   }
 
@@ -251,6 +261,7 @@ export class XfiDefiSeiService {
     amount: string,
     user: User,
     originalCommand: string,
+    data: Partial<Transaction>,
   ) {
     console.log('Swapping ....');
     const nativeAddress = this.symphony.getConfig().nativeAddress;
@@ -292,25 +303,15 @@ export class XfiDefiSeiService {
     if (transaction.swapReceipt.hash) {
       try {
         await new this.transactionModel({
-          userId: user.userId,
-          transactionType: 'buy',
-          chain: 'sei',
-          amount: amount,
-          token: {
-            address: tokenOut,
-            tokenType: 'token',
-          },
+          ...data,
           txHash: transaction.swapReceipt.hash,
-          meta: {
-            platform: 'twitter',
-            originalCommand,
-          },
         }).save();
       } catch (err) {
         console.error('Failed to save transaction:', err.message);
       }
     }
-    return `https://seitrace.com/tx/${transaction.swapReceipt.hash}`;
+    // return `https://seitrace.com/tx/${transaction.swapReceipt.hash}`;
+    return `swapped ${amount} $SEI for ${route.amountOut} ${tokenOut}\nhttps://seitrace.com/tx/${transaction.swapReceipt.hash}`;
   }
 
   async sellToken(
@@ -318,6 +319,7 @@ export class XfiDefiSeiService {
     amount: string,
     user: User,
     originalCommand: string,
+    data: Partial<Transaction>,
   ) {
     console.log('Swapping ....');
     console.log(amount);
@@ -357,25 +359,14 @@ export class XfiDefiSeiService {
     if (transaction.swapReceipt.hash) {
       try {
         await new this.transactionModel({
-          userId: user.userId,
-          transactionType: 'buy',
-          chain: 'sei',
-          amount: amount,
-          token: {
-            address: tokenOut,
-            tokenType: 'token',
-          },
+          ...data,
           txHash: transaction.swapReceipt.hash,
-          meta: {
-            platform: 'twitter',
-            originalCommand,
-          },
         }).save();
       } catch (err) {
         console.error('Failed to save transaction:', err.message);
       }
     }
-    return `https://seitrace.com/tx/${transaction.swapReceipt.hash}`;
+    return `swapped ${amount} ${tokenIn} for ${parseEther(route.amountOut)}\nhttps://seitrace.com/tx/${transaction.swapReceipt.hash}`;
   }
 
   // private async getERC20TokenContract(

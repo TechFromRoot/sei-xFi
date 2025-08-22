@@ -52,6 +52,12 @@ export class Transaction {
   @Prop({ type: String, ref: 'User', required: false })
   receiverUserId?: string;
 
+  @Prop()
+  tokenIn?: string;
+
+  @Prop()
+  tokenOut?: string;
+
   @Prop({ type: String })
   txHash?: string;
 

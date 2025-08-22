@@ -13,6 +13,8 @@ export class TwitterClientController {
     return this.handleDefiService.handleTweetCommand(
       commandDto.prompt,
       commandDto.userId,
+      undefined,
+      'terminal',
     );
   }
 }

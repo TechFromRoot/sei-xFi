@@ -119,6 +119,7 @@ export class TwitterClientDirectMessage {
         conversation.text,
         conversation.senderId,
         conversation.senderScreenName,
+        'twitter-dm',
       );
 
       if (!defiResponse) {

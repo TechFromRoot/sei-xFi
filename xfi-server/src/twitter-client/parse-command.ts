@@ -13,6 +13,7 @@ import { XfiDefiSeiService } from 'src/xfi-defi/xfi-defi-sei.service';
 type Action = 'buy' | 'sell' | 'send' | 'tip';
 type TokenType = 'native' | 'stable' | 'token';
 type ReceiverType = 'wallet' | 'ens' | 'username' | 'sns';
+type Platform = 'twitter' | 'twitter-dm' | 'terminal';
 
 interface Token {
   value: string;
@@ -280,6 +281,7 @@ export class ParseCommandService {
     amount: string,
     user: User,
     originalCommand: string,
+    platform: Platform = 'twitter',
   ) {
     console.log(`Sending ${amount} native on ${chain} to ${to}`);
     try {
@@ -292,7 +294,7 @@ export class ParseCommandService {
           token: { address: 'sei', tokenType: 'native' },
           receiver: { value: to, receiverType: 'wallet' },
           meta: {
-            platform: 'twitter',
+            platform: platform,
             originalCommand: originalCommand,
           },
         };
@@ -316,6 +318,7 @@ export class ParseCommandService {
     amount: string,
     user: User,
     originalCommand: string,
+    platform: Platform = 'twitter',
   ) {
     console.log(`Sending ${amount} stable ${token} on ${chain} to ${to}`);
 
@@ -329,7 +332,7 @@ export class ParseCommandService {
           token: { address: token, tokenType: 'stable' },
           receiver: { value: to, receiverType: 'wallet' },
           meta: {
-            platform: 'twitter',
+            platform: platform,
             originalCommand: originalCommand,
           },
         };
@@ -354,14 +357,29 @@ export class ParseCommandService {
     nativeAmount: string,
     user: User,
     originalCommand: string,
+    platform: Platform = 'twitter',
   ) {
     try {
       if (chain == 'sei') {
+        const data: Partial<Transaction> = {
+          userId: user.userId,
+          transactionType: 'buy',
+          chain: 'sei',
+          amount: nativeAmount,
+          token: { address: 'sei', tokenType: 'native' },
+          tokenIn: 'sei',
+          tokenOut: token,
+          meta: {
+            platform: platform,
+            originalCommand: originalCommand,
+          },
+        };
         const response = await this.defiSeiService.buyToken(
           token,
           nativeAmount,
           user,
           originalCommand,
+          data,
         );
         return response;
       }
@@ -376,15 +394,30 @@ export class ParseCommandService {
     amount: string,
     user: User,
     originalCommand: string,
+    platform: Platform = 'twitter',
   ) {
     console.log(`Selling ${amount}% of ${token} on ${chain}`);
     try {
       if (chain == 'sei') {
+        const data: Partial<Transaction> = {
+          userId: user.userId,
+          transactionType: 'buy',
+          chain: 'sei',
+          amount: amount,
+          token: { address: token, tokenType: 'token' },
+          tokenIn: token,
+          tokenOut: 'sei',
+          meta: {
+            platform: platform,
+            originalCommand: originalCommand,
+          },
+        };
         const response = await this.defiSeiService.sellToken(
           token,
           amount,
           user,
           originalCommand,
+          data,
         );
         return response;
       }
@@ -394,7 +427,12 @@ export class ParseCommandService {
   }
 
   // --- 🎯 BUNDLED ENTRY FUNCTION ---
-  async handleTweetCommand(tweet: string, userId: string, username?: string) {
+  async handleTweetCommand(
+    tweet: string,
+    userId: string,
+    username?: string,
+    platform: Platform = 'twitter',
+  ) {
     const normalized = tweet.replace(/\s+/g, ' ').trim();
 
     const balanceRegex =
@@ -430,7 +468,7 @@ export class ParseCommandService {
             const newUser = await this.getOrCreateUser(
               {
                 id: userId,
-                username,
+                username: username,
               },
               true,
             );
@@ -536,6 +574,7 @@ export class ParseCommandService {
               amount,
               user,
               tweet,
+              platform,
             );
 
             const startsWithHttps = /^https/.test(nativeResponse);
@@ -561,6 +600,7 @@ export class ParseCommandService {
               amount,
               user,
               tweet,
+              platform,
             );
             const startsWithHttps = /^https/.test(stableResponse);
             if (startsWithHttps && to.type == 'username') {
@@ -586,10 +626,24 @@ export class ParseCommandService {
         //   );
 
         case 'buy':
-          return this.handleBuy(chain, token.value, amount, user, tweet);
+          return this.handleBuy(
+            chain,
+            token.value,
+            amount,
+            user,
+            tweet,
+            platform,
+          );
 
         case 'sell':
-          return this.handleSell(chain, token.value, amount, user, tweet);
+          return this.handleSell(
+            chain,
+            token.value,
+            amount,
+            user,
+            tweet,
+            platform,
+          );
       }
     } catch (error) {
       console.log(error);
