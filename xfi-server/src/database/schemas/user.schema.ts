@@ -16,6 +16,9 @@ export class User {
   displayName: string;
 
   @Prop()
+  profileImage: string;
+
+  @Prop()
   walletAddress: string;
 
   @Prop()

@@ -39,6 +39,7 @@ export class UserService {
       const user = new this.userModel({
         userId: createUserDto.userId,
         userName: createUserDto.userName,
+        profileImage: createUserDto.profileImage ?? '',
         walletAddress: newEvmWallet.address,
         walletDetails: encryptedEvmWalletDetails.json,
       });
@@ -52,11 +53,9 @@ export class UserService {
     userId: string,
     updateUserDto: UpdateUserDto,
   ): Promise<User> {
-    const user = await this.userModel.findOneAndUpdate(
-      { userId },
-      updateUserDto,
-      { new: true },
-    );
+    const user = await this.userModel
+      .findOneAndUpdate({ userId }, updateUserDto, { new: true })
+      .select('-walletDetails');
     if (!user) throw new NotFoundException('User not found');
     return user;
   }

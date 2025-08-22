@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as multichainWallet from 'multichain-crypto-wallet';
 import { createHash } from 'crypto';
-
 import * as dotenv from 'dotenv';
 
 dotenv.config();

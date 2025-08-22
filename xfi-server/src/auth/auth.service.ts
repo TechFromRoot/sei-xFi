@@ -16,12 +16,22 @@ export class AuthService {
   ) {}
 
   async authenticate(userId: string, userName: string) {
-    let user = await this.userModel.findOne({ userId }).exec();
+    let user = await this.userModel
+      .findOne({ userId })
+      .select('-walletDetails')
+      .exec();
     if (!user) {
       this.logger.log(`User with ID ${userId} not found. Creating new user.`);
       user = await this.usersService.createUser({ userId, userName });
     } else {
       this.logger.log(`User with ID ${userId} found.`);
+      if (user.userName !== userName) {
+        this.logger.log(
+          `Username mismatch for user ID ${userId}. Updating username to ${userName}.`,
+        );
+        user.userName = userName;
+        await user.save();
+      }
     }
 
     const jwt = await this.generateJwt(user);

@@ -1,5 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { Response } from 'express';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -8,8 +9,13 @@ export class JwtAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const token = request.cookies?.auth_token;
+    const response: Response = context.switchToHttp().getResponse();
+
     console.log('token:', token);
-    if (!token) return false;
+    if (!token) {
+      response.redirect('http://localhost:5173/');
+      return false;
+    }
 
     try {
       const payload = await this.jwtService.verify(token, {
@@ -20,6 +26,7 @@ export class JwtAuthGuard implements CanActivate {
       request.user = payload;
       return true;
     } catch {
+      response.redirect('http://localhost:5173/');
       return false;
     }
   }

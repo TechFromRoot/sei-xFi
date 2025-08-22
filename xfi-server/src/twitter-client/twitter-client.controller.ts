@@ -12,7 +12,6 @@ export class TwitterClientController {
   @ApiOperation({ summary: 'Send Command to the bot' })
   async prompt(@Body() commandDto: CommandDto, @Req() req: any) {
     const userId = req.user.sub;
-
     if (userId !== commandDto.userId) {
       return { error: 'Unauthorized user' };
     }
