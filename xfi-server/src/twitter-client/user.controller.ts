@@ -1,15 +1,8 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Get,
-  Query,
-} from '@nestjs/common';
-import { EvmChain, SolAsset, UserService } from './user.service';
+import { Controller, Post, Body, Patch, Param, Get } from '@nestjs/common';
+import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { TwitterApi } from 'twitter-api-v2';
+import { ApiBody, ApiOperation } from '@nestjs/swagger';
 
 @Controller('users')
 export class UserController {
@@ -17,11 +10,15 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
+  @ApiOperation({ summary: 'Create a new User' })
+  @ApiBody({ type: CreateUserDto })
   async createUser(@Body() createUserDto: CreateUserDto) {
     return this.userService.createUser(createUserDto);
   }
 
   @Patch(':userId')
+  @ApiOperation({ summary: 'Update a  User' })
+  @ApiBody({ type: CreateUserDto })
   async updateUser(
     @Param('userId') userId: string,
     @Body() updateUserDto: UpdateUserDto,
@@ -30,6 +27,7 @@ export class UserController {
   }
 
   @Get(':userId')
+  @ApiOperation({ summary: 'fetch a user' })
   async getUser(@Param('userId') userId: string) {
     // let twitterData: any = {};
     // try {
@@ -40,23 +38,23 @@ export class UserController {
     // }
     const user = await this.userService.getUserById(userId);
     return {
-      userId: userId,
-      evmWalletAddress: user.walletAddress,
-      chains: user.chains,
+      userId: user.userId,
+      walletAddress: user.walletAddress,
       username: user.userName,
-      name: user.displayName,
     };
   }
 
-  @Get(':userId/evm-balance')
-  async getUserEVMBalance(
-    @Param('userId') userId: string,
-    @Query('chain') chain: EvmChain,
-  ): Promise<SolAsset[]> {
-    return await this.userService.getUserEVMBalance(userId, chain);
-  }
+  // @Get(':userId/evm-balance')
+  // @ApiOperation({ summary: 'fetch a user' })
+  // async getUserEVMBalance(
+  //   @Param('userId') userId: string,
+  //   @Query('chain') chain: EvmChain,
+  // ): Promise<SolAsset[]> {
+  //   return await this.userService.getUserEVMBalance(userId, chain);
+  // }
 
   @Get('history/:userId')
+  @ApiOperation({ summary: 'get User transaction history' })
   async getHistory(@Param('userId') userId: string) {
     return await this.userService.getTransactionHistory(userId);
   }

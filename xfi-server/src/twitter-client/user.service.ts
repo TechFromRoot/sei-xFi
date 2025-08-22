@@ -41,7 +41,6 @@ export class UserService {
         userName: createUserDto.userName,
         walletAddress: newEvmWallet.address,
         walletDetails: encryptedEvmWalletDetails.json,
-        chains: createUserDto.chains,
       });
       return user.save();
     } catch (error) {
@@ -90,10 +89,7 @@ export class UserService {
     return transactions;
   }
 
-  async getUserEVMBalance(
-    userId: string,
-    chain: EvmChain,
-  ): Promise<SolAsset[]> {
+  async getUserEVMBalance(userId: string, chain: EvmChain): Promise<any[]> {
     const user = await this.userModel.findOne({ userId });
     if (!user) throw new NotFoundException('User not found');
 
