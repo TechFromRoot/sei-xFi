@@ -194,6 +194,8 @@ export class UserService {
       decimals: token.decimals,
       amount: token.amount,
       raw_amount: token.raw_amount,
+      token_usd_price: token.price,
+      amount_usd_value: token.amount * token.price,
     }));
   }
 }

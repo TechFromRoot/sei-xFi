@@ -62,4 +62,10 @@ export class FilteredTokenResponseDto {
 
   @ApiProperty({ example: 1724733497 })
   raw_amount: number;
+
+  @ApiProperty({ example: 0.000014859545291039 })
+  token_usd_price: number;
+
+  @ApiProperty({ example: 35.1 })
+  amount_usd_value: number;
 }
