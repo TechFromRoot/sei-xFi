@@ -33,10 +33,7 @@ export class AuthController {
     @Body() createUserDto: CreateUserDto,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const authResponse = await this.authService.authenticate(
-      createUserDto.userId,
-      createUserDto.userName,
-    );
+    const authResponse = await this.authService.authenticate(createUserDto);
 
     const isProduction = process.env.NODE_ENV === 'production';
 

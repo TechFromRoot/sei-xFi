@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from 'src/database/schemas/user.schema';
+import { CreateUserDto } from 'src/twitter-client/dto/user.dto';
 import { UserService } from 'src/twitter-client/user.service';
 
 @Injectable()
@@ -15,21 +16,23 @@ export class AuthService {
     @InjectModel(User.name) private readonly userModel: Model<User>,
   ) {}
 
-  async authenticate(userId: string, userName: string) {
+  async authenticate(userData: CreateUserDto) {
     let user = await this.userModel
-      .findOne({ userId })
+      .findOne({ userId: userData.userId })
       .select('-walletDetails')
       .exec();
     if (!user) {
-      this.logger.log(`User with ID ${userId} not found. Creating new user.`);
-      user = await this.usersService.createUser({ userId, userName });
+      this.logger.log(
+        `User with ID ${userData.userId} not found. Creating new user.`,
+      );
+      user = await this.usersService.createUser(userData);
     } else {
-      this.logger.log(`User with ID ${userId} found.`);
-      if (user.userName !== userName) {
+      this.logger.log(`User with ID ${userData.userId} found.`);
+      if (user.userName !== userData.userName) {
         this.logger.log(
-          `Username mismatch for user ID ${userId}. Updating username to ${userName}.`,
+          `Username mismatch for user ID ${userData.userId}. Updating username to ${userData.userName}.`,
         );
-        user.userName = userName;
+        user.userName = userData.userName;
         await user.save();
       }
     }
