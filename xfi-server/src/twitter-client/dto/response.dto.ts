@@ -68,4 +68,10 @@ export class FilteredTokenResponseDto {
 
   @ApiProperty({ example: 35.1 })
   amount_usd_value: number;
+
+  @ApiProperty({
+    example:
+      'https://static.debank.com/image/sei_token/logo_url/0x95597eb8d227a7c4b4f5e807a815c5178ee6dbe1/7ca184ac98c075eae2f72bb6c4590cc8.png',
+  })
+  logo: string;
 }

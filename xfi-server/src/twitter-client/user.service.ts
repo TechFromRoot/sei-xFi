@@ -196,6 +196,7 @@ export class UserService {
       raw_amount: token.raw_amount,
       token_usd_price: token.price,
       amount_usd_value: token.amount * token.price,
+      logo: token.logo_url,
     }));
   }
 }
