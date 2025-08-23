@@ -46,6 +46,7 @@ export class UserController {
       userId: user.userId,
       walletAddress: user.walletAddress,
       username: user.userName,
+      profileImage: user.profileImage,
     };
   }
 
