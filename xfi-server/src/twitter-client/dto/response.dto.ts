@@ -46,3 +46,20 @@ export class UserResponseDto {
   })
   chains: string[];
 }
+
+export class FilteredTokenResponseDto {
+  @ApiProperty({ example: 'MILLI' })
+  name: string;
+
+  @ApiProperty({ example: 'MILLI' })
+  symbol: string;
+
+  @ApiProperty({ example: 6 })
+  decimals: number;
+
+  @ApiProperty({ example: 1724.733497 })
+  amount: number;
+
+  @ApiProperty({ example: 1724733497 })
+  raw_amount: number;
+}

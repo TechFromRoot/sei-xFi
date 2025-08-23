@@ -4,7 +4,7 @@ import { UpdateUserDto } from './dto/user.dto';
 import { TwitterApi } from 'twitter-api-v2';
 import { ApiBody, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
-import { UserResponseDto } from './dto/response.dto';
+import { FilteredTokenResponseDto, UserResponseDto } from './dto/response.dto';
 
 @Controller('users')
 export class UserController {
@@ -49,14 +49,12 @@ export class UserController {
     };
   }
 
-  // @Get(':userId/evm-balance')
-  // @ApiOperation({ summary: 'fetch a user' })
-  // async getUserEVMBalance(
-  //   @Param('userId') userId: string,
-  //   @Query('chain') chain: EvmChain,
-  // ): Promise<SolAsset[]> {
-  //   return await this.userService.getUserEVMBalance(userId, chain);
-  // }
+  @Get('balance/:userId')
+  @ApiOperation({ summary: 'fetch a user assets and balance' })
+  @ApiOkResponse({ type: FilteredTokenResponseDto })
+  async getUserBlance(@Param('userId') userId: string) {
+    return await this.userService.getUserWalletBalance(userId);
+  }
 
   @Get('history/:userId')
   @ApiOperation({ summary: 'get User transaction history' })

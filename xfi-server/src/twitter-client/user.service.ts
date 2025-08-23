@@ -9,6 +9,7 @@ import { User, UserDocument } from 'src/database/schemas/user.schema';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { Transaction } from 'src/database/schemas/transactions.schema';
 import { WalletService } from 'src/wallet/wallet.service';
+import { HttpService } from '@nestjs/axios';
 
 export interface SolAsset {
   tokenName: string;
@@ -21,6 +22,7 @@ export type EvmChain = 'ethereum' | 'sei';
 @Injectable()
 export class UserService {
   constructor(
+    private readonly httpService: HttpService,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly walletService: WalletService,
     @InjectModel(Transaction.name)
@@ -176,5 +178,22 @@ export class UserService {
       default:
         throw new BadRequestException(`Unsupported chain: ${chain}`);
     }
+  }
+
+  async getUserWalletBalance(userId: string): Promise<any> {
+    const user = await this.userModel.findOne({ userId });
+    if (!user) throw new NotFoundException('User not found');
+
+    const balance = await this.httpService.axiosRef.get(
+      `${process.env.BALANCE_API}?id=${user.walletAddress}&is_all=true&chain_id=sei`,
+    );
+
+    return balance.data.map((token) => ({
+      name: token.name,
+      symbol: token.symbol,
+      decimals: token.decimals,
+      amount: token.amount,
+      raw_amount: token.raw_amount,
+    }));
   }
 }

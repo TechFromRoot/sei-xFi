@@ -140,8 +140,10 @@ export class ParseCommandService {
     const normalized = tweet.replace(/\s+/g, ' ').trim();
 
     // === SEND / TIP ===
+    // const sendRegex =
+    //   /(send|tip)\s+([\d.]+)\s+(\w+)\s+to\s+([a-zA-Z0-9.@]+)(?:\s+on\s+(\w+))?/i;
     const sendRegex =
-      /(send|tip)\s+([\d.]+)\s+(\w+)\s+to\s+([a-zA-Z0-9.@]+)(?:\s+on\s+(\w+))?/i;
+      /(send|tip)\s+([\d]+(?:\.\d+)?)\s+\$?([A-Za-z0-9-]+)\s+to\s+([a-zA-Z0-9._@]+)(?:\s+on\s+(\w+))?/i;
     const sendMatch = normalized.match(sendRegex);
     if (sendMatch) {
       const [, actionRaw, amount, tokenValue, receiverValue, chainMaybe] =
@@ -182,10 +184,12 @@ export class ParseCommandService {
       };
     }
 
-    // === BUY / SELL: [token] for [amount][payToken] ===
-    const buySellForRegex =
-      /(buy|sell)\s+([a-zA-Z0-9]+)\s+for\s+([\d.]+)\s*([a-zA-Z]+)(?:\s+on\s+(\w+))?/i;
-    const buySellForMatch = normalized.match(buySellForRegex);
+    // === BUY : [token] for [amount][payToken] ===
+    // const buySellForRegex =
+    //   /(buy|sell)\s+([a-zA-Z0-9]+)\s+for\s+([\d.]+)\s*([a-zA-Z]+)(?:\s+on\s+(\w+))?/i;
+    const buyRegex =
+      /(buy)\s+(0x[a-fA-F0-9]{40}|\$?[A-Za-z0-9-]+)\s+(?:for)\s+([\d]+(?:\.\d+)?)\s*\$?([A-Za-z0-9-]+)/i;
+    const buySellForMatch = normalized.match(buyRegex);
     if (buySellForMatch) {
       const [, actionRaw, targetToken, amount, payToken, chainMaybe] =
         buySellForMatch;
@@ -201,9 +205,11 @@ export class ParseCommandService {
     }
 
     // === SELL all / half / percent ===
-    const sellPercentageRegex =
-      /sell\s+(all|half|\d{1,3}%)\s+(?:of\s+)?([a-zA-Z0-9]+)(?:\s+on\s+(\w+))?/i;
-    const sellPercentMatch = normalized.match(sellPercentageRegex);
+    // const sellPercentageRegex =
+    //   /sell\s+(all|half|\d{1,3}%)\s+(?:of\s+)?([a-zA-Z0-9]+)(?:\s+on\s+(\w+))?/i;
+    const sellRegex =
+      /(sell)\s+(all|100%|[\d]+(?:\.\d+)?%)?\s*(0x[a-fA-F0-9]{40}|\$?[A-Za-z0-9-]+)/i;
+    const sellPercentMatch = normalized.match(sellRegex);
     if (sellPercentMatch) {
       const [, portion, tokenValue, chainMaybe] = sellPercentMatch;
       let amount = '100';

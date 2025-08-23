@@ -22,10 +22,12 @@ import {
 } from 'src/database/schemas/directMessage.schema';
 import { Cookies, CookiesSchema } from 'src/database/schemas/cookie.schema';
 import { JwtModule } from '@nestjs/jwt';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
   imports: [
     JwtModule,
+    HttpModule,
     MongooseModule.forFeature([{ name: Memory.name, schema: MemorySchema }]),
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     MongooseModule.forFeature([
