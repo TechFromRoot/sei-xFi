@@ -139,7 +139,8 @@ export class ParseCommandService {
   }
 
   parseTweetCommand(tweet: string): ParsedCommand | null {
-    const normalized = tweet.replace(/\s+/g, ' ').trim();
+    let normalized = tweet.replace(/\s+/g, ' ').trim();
+    normalized = this.removeFirstMention(normalized);
 
     // === SEND / TIP ===
     // const sendRegex =
@@ -492,7 +493,8 @@ export class ParseCommandService {
     username?: string,
     platform: Platform = 'twitter',
   ) {
-    const normalized = tweet.replace(/\s+/g, ' ').trim();
+    let normalized = tweet.replace(/\s+/g, ' ').trim();
+    normalized = this.removeFirstMention(normalized);
 
     const balanceRegex =
       /\b(?:get(?:\s+me)?|check|show|see|what(?:'|’)?s|what\s+is|can\s+you\s+get|i\s+want\s+to\s+see)?\s*(?:my\s*)?(?:(sei|ethereum)\s+)?balance(?:\s*(?:on|of|for)?\s*(sei|ethereum|eth))?\b/i;
@@ -688,5 +690,9 @@ export class ParseCommandService {
     }
 
     return result.trim(); // remove last extra newline
+  }
+
+  removeFirstMention(str: string): string {
+    return str.replace(/^@\S+\s*/, '').trim();
   }
 }
