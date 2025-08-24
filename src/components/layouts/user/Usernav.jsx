@@ -13,7 +13,7 @@ function Usernav({user}) {
       <ul>
         <li className="btn">LeaderBoard</li>
         <li className="notsBtn">
-          <BellDot />
+          <BellDot className="notsIcon"/>
         </li>
         <li className="dpCont">
           <img src={user ? user?.profileImage : dp} alt="dp" />

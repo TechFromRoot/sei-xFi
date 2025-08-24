@@ -6,7 +6,7 @@ export function truncateMiddle(value, front = 4, back = 4, ellipsis = "...") {
   return `${str.slice(0, front)}${ellipsis}${str.slice(-back)}`;
 }
 
-export const timeAgo =(dateString)  =>{
+export const timeAgo = (dateString) => {
   const now = new Date();
   const past = new Date(dateString);
   const diffInSeconds = Math.floor((now - past) / 1000);
@@ -27,9 +27,20 @@ export const timeAgo =(dateString)  =>{
     }
   }
   return "just now";
+};
+
+export function formatTokenAmount(amount) {
+  if (amount >= 1e9) return (amount / 1e9).toFixed(2) + "B";
+  if (amount >= 1e6) return (amount / 1e6).toFixed(2) + "M";
+  if (amount >= 1e3) return (amount / 1e3).toFixed(2) + "K";
+  return amount.toFixed(2);
 }
 
-
+export function formatUsd(value) {
+  if (value >= 1) return value.toFixed(2);
+  if (value >= 0.01) return value.toFixed(3);
+  return value.toPrecision(2);
+}
 
 export const errorMsgs = (e) =>
   toast(e, {

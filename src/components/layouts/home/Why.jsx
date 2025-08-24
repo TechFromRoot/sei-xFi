@@ -2,7 +2,7 @@ import React from "react";
 
 function Why() {
   return (
-    <section className="why">
+    <section className="why" id="why">
       <h1>Why XFI?</h1>
       <p>
         Traditional social platforms don’t make it easy to support creators,

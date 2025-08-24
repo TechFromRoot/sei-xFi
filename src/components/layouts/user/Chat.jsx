@@ -1,11 +1,12 @@
 import axios from "axios";
 import { Send } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
-const Chat = () => {
+const Chat = ({ getHistory }) => {
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
 
   const tradingOptions = [
     "Tip 0.01 sei to ekete.eth",
@@ -35,54 +36,44 @@ const Chat = () => {
       setIsTyping(true);
 
       const requestBody = {
-        userId: "1726917008892088320",
-        prompt: "tip 0.01 sei to ekete.eth",
+        userId: authId,
+        prompt: inputValue,
       };
 
       console.log(requestBody);
-      console.log('All cookies:', document.cookie);
-      axios.defaults.baseURL = import.meta.env.VITE_API_BASE;
-      axios.defaults.withCredentials = true;
 
-      const res = await axios.post("/api/bot-command", requestBody); // ✅ Just the path
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE}/api/bot-command`,
+        requestBody,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true,
+        }
+      );
 
-      console.log(res);
+      if (res) {
+        console.log(res.data.response);
+        const xFiResponse = {
+          id: Date.now() + 1,
+          text: res.data.response,
+          sender: "xFi",
+        };
+        setMessages((prev) => [...prev, xFiResponse]);
+        setIsTyping(false);
+        if (
+          !res.data.response.includes(
+            "if you’re trying to use a command or just curiou"
+          )
+        ) {
+          getHistory();
+        }
+      }
 
-      // Simulate AI response
-      // setTimeout(() => {
-      //   const aiResponse = {
-      //     id: Date.now() + 1,
-      //     text: getAIResponse(userMessage.text),
-      //     // sender: "ai",
-      //     sender: "xFi",
-      //   };
-      //   setMessages((prev) => [...prev, aiResponse]);
-      //   setIsTyping(false);
-      // }, 1500);
-
-      //   setMessages((prev) => [...prev, aiResponse]);
       setIsTyping(false);
     } catch (error) {
       console.log(error);
-    }
-  };
-
-  const getAIResponse = (userText) => {
-    // Simple response logic - you can make this more sophisticated
-    if (
-      userText.toLowerCase().includes("tip") ||
-      userText.toLowerCase().includes("send")
-    ) {
-      return "I'll help you process that transaction. Let me check the current rates and prepare the transfer.";
-    } else if (
-      userText.toLowerCase().includes("sell") ||
-      userText.toLowerCase().includes("buy")
-    ) {
-      return "I'm analyzing the market conditions for your trade. This might take a moment to execute safely.";
-    } else if (userText.toLowerCase().includes("deploy")) {
-      return "Ready to deploy your coin! I'll guide you through the smart contract deployment process.";
-    } else {
-      return "I understand. How would you like me to help you with your crypto trading needs?";
     }
   };
 
@@ -114,7 +105,24 @@ const Chat = () => {
                 <div className="message-sender">
                   {message.sender === "user" ? "You" : "xFi"}
                 </div>
-                <div className="message-text">{message.text}</div>
+                <div className="message-text">
+                  {message.text.split(urlRegex).map((part, idx) => {
+                    if (part.match(urlRegex)) {
+                      return (
+                        <a
+                          key={idx}
+                          href={part}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ wordBreak: "break-all" }}
+                        >
+                          {part}
+                        </a>
+                      );
+                    }
+                    return part; // normal text
+                  })}
+                </div>
               </div>
             </div>
           ))}

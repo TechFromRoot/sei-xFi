@@ -59,9 +59,9 @@ function Faq() {
     }
   };
   return (
-    <section className="faq">
-      <h1>Frequently Asked Questions</h1>
-      <h2>Dive into our comprehensive FAQ where we cover everything</h2>
+    <section className="faq" id="faq">
+      <h1>Faq</h1>
+      <h3>Dive into our comprehensive FAQ where we cover everything</h3>
       <div className="rows">
         <div
           className="box"

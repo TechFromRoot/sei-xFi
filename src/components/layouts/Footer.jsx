@@ -21,10 +21,14 @@ function Footer() {
       </a>
       <ul>
         <li>
-          <a href="#">About</a>
+          <a href="/#home">
+            Home
+          </a>
         </li>
-        <li>
-          <a href="#">How to</a>
+                <li>
+          <a href="/#howto">
+            About
+          </a>
         </li>
         <li>
           <a href="#">Privacy Policy</a>

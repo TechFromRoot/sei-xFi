@@ -83,25 +83,26 @@ function Nav() {
     <nav
       style={classSec === null ? { display: "none" } : { display: "flex" }}
       className={classSec ? "classSec" : ""}
+      id="home"
     >
       <Link to="/" className="logo">
         <img src={logo} alt="" />
       </Link>
       <ul ref={mobileMenuRef}>
         <li>
-          <Link to="/#about" onClick={closeMobileMenuPopUp}>
+          <a href="/#howto" onClick={closeMobileMenuPopUp}>
             About
-          </Link>
+          </a>
         </li>
         <li>
-          <Link to="/courses" onClick={closeMobileMenuPopUp}>
-            How to
-          </Link>
+          <a href="/#why" onClick={closeMobileMenuPopUp}>
+            Why
+          </a>
         </li>
         <li>
-          <Link to="/courses" onClick={closeMobileMenuPopUp}>
-            Join
-          </Link>
+          <a href="/#faq" onClick={closeMobileMenuPopUp}>
+            Faq
+          </a>
         </li>
 
         <Link to="sign" className="btn">

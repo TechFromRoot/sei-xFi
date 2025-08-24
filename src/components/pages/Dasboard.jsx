@@ -13,6 +13,7 @@ function Dasboard() {
   const [user, setUser] = useState(null);
   const [userBalance, setUserBalance] = useState([]);
   const [txs, setTxs] = useState([]);
+  const [showPanel, setShowPanel] = useState(1);
 
   const tips = Array.from({ length: 20 }, (_, i) => i + 1);
 
@@ -21,14 +22,9 @@ function Dasboard() {
       const authId = localStorage.getItem("authId");
       if (!authId) return;
 
-      //   const res = await axios.get(
-      //     `${import.meta.env.VITE_API_BASE}/api/users/history/${authId}`
-      //   );
       const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE}/api/users/history/1881784875478630400`
+        `${import.meta.env.VITE_API_BASE}/api/users/history/${authId}`
       );
-
-    //   console.log(res.data);
       setTxs(res.data);
     } catch (err) {
       console.error("Error fetching balances:", err);
@@ -39,13 +35,13 @@ function Dasboard() {
     try {
       const authId = localStorage.getItem("authId");
       if (!authId) return;
-      // const res = await axios.get(
-      //   `${import.meta.env.VITE_API_BASE}/api/users/balance/${authId}`
-      // );
-
       const res = await axios.get(
-        `${import.meta.env.VITE_API_BASE}/api/users/balance/1881784875478630400`
+        `${import.meta.env.VITE_API_BASE}/api/users/balance/${authId}`
       );
+
+      //   const res = await axios.get(
+      //     `${import.meta.env.VITE_API_BASE}/api/users/balance/1881784875478630400`
+      //   );
 
       // make sure it's an array
       const balances = res.data || [];
@@ -82,15 +78,19 @@ function Dasboard() {
       await getHistory();
 
       /**@wWORKING_ON_GETTING_BALANCE */
-      //   const rawUserBlanace = await getBalances();
-      const rawUserBlanace = [];
+        const rawUserBlanace = await getBalances();
+    //   const rawUserBlanace = [];
       console.log(rawUserBlanace);
 
-      setUserBalance(rawUserBlanace);
       setUserBalance(rawUserBlanace);
     } catch (error) {
       console.log(error);
     }
+  };
+
+  const setShowPanelFunc = (e) => {
+    const no = e.target.getAttribute("data-index");
+    setShowPanel(no);
   };
 
   useEffect(() => {
@@ -100,11 +100,38 @@ function Dasboard() {
   return (
     <div className="userDashboard">
       <Usernav user={user} />
-      <main>
+
+      <div className="header_btns">
+        <div
+          className={showPanel == 0 ? "btn active" : "btn"}
+          data-index={0}
+          onClick={setShowPanelFunc}
+        >
+          Activities
+        </div>
+        <div
+          className={showPanel == 1 ? "btn active" : "btn"}
+          data-index={1}
+          onClick={setShowPanelFunc}
+        >
+          Terminal
+        </div>
+        <div
+          className={showPanel == 2 ? "btn active" : "btn"}
+          data-index={2}
+          onClick={setShowPanelFunc}
+        >
+          My wallet
+        </div>
+      </div>
+      <main
+        className={
+          showPanel == 0 ? "activty" : showPanel == 1 ? "chat" : "wallet"
+        }
+      >
         <div className="transactions">
           <h1>Transactions</h1>
           <div className="rows">
-           
             {txs &&
               Array.from(txs, (tx) => (
                 <a
@@ -138,7 +165,7 @@ function Dasboard() {
               ))}
           </div>
         </div>
-        <Chat />
+        <Chat getHistory={getHistory} />
 
         <WalletSec user={user} userBalance={userBalance} />
       </main>

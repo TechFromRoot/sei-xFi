@@ -2,7 +2,11 @@ import React, { useEffect, useRef, useState } from "react";
 import dp from "../../../assets/images/dp.jpg";
 import { QRCodeCanvas } from "qrcode.react";
 import { Eye, EyeOff } from "lucide-react";
-import { truncateMiddle } from "../../utils/utils";
+import {
+  formatTokenAmount,
+  formatUsd,
+  truncateMiddle,
+} from "../../utils/utils";
 // import "./WalletSec.css"; // 👈 import CSS file
 
 const WalletSec = ({ user, userBalance }) => {
@@ -29,14 +33,18 @@ const WalletSec = ({ user, userBalance }) => {
     const balanceElement = balanceElementRef.current;
     setShowAmount(showamount);
     if (showamount) {
-      balanceElement.textContent = `$${amount}`;
+      const formattedUsd = formatUsd(amount);
+      balanceElement.textContent = `$${formattedUsd}`;
     } else {
       balanceElement.textContent = "••••";
     }
   }
 
   useEffect(() => {
-    if (userBalance.length > 0) {
+    console.log(userBalance.totalUsd);
+    // console.log(userBalance?.length );
+
+    if (userBalance.totalUsd) {
       setAmount(userBalance.totalUsd);
     }
   }, [userBalance]);
@@ -113,7 +121,9 @@ const WalletSec = ({ user, userBalance }) => {
         ) : (
           <div>
             <h2 className="seed-words">
-              Lorem, ipsum dolor sit amet consectetur adipisicing elit. Neque beatae odio corrupti numquam soluta sequi dolor animi omnis provident voluptatibus.
+              Lorem, ipsum dolor sit amet consectetur adipisicing elit. Neque
+              beatae odio corrupti numquam soluta sequi dolor animi omnis
+              provident voluptatibus.
             </h2>
 
             <div className="seed-actions">
@@ -200,7 +210,7 @@ const WalletSec = ({ user, userBalance }) => {
 
         <div className="wallet-card-bottom">
           <div ref={balanceElementRef} className="wallet-balance">
-            ${amount}
+            ${formatUsd(amount)}
           </div>
           <div className="wallet-toggle">
             {showAmount ? (
@@ -243,29 +253,19 @@ const WalletSec = ({ user, userBalance }) => {
         <button className="tab-inactive">NFTs</button>
       </div>
       <div className="tokens">
-        {/* {Array.from({ length: 20 }).map((_, idx) => (
-          <a href="#" target="_blank" className="token-tab" key={idx}>
-            <div className="first-cont">
-              <img src={dp} alt="" />
-              <h3>SEI</h3>
-            </div>
-            <div className="last-cont">
-              <h3>${(Math.random() * 10).toFixed(2)}</h3>
-              <h4>{(Math.random() * 100).toFixed(4)} TKN</h4>
-            </div>
-          </a>
-        ))} */}
-        {/* 
-        <div className="token-tab">
-          <div className="first-cont">
-            <img src={dp} alt="" />
-            <h3>SEI</h3>
-          </div>
-          <div className="last-cont">
-            <h3>$0.03</h3>
-            <h4>0.98349 SEI</h4>
-          </div>
-        </div> */}
+        {userBalance.totalUsd &&
+          userBalance.balances.map((item, idx) => (
+            <a target="_blank" className="token-tab" key={idx}>
+              <div className="first-cont">
+                <img src={item.logo} alt="" />
+                <h3>{item.name}</h3>
+              </div>
+              <div className="last-cont">
+                <h3>${formatUsd(item.amount_usd_value)}</h3>
+                <h4>{formatTokenAmount(item.raw_amount)} TKN</h4>
+              </div>
+            </a>
+          ))}
       </div>
 
       {/* Modals */}
