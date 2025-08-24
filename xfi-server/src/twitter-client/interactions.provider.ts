@@ -12,6 +12,10 @@ import { Cache } from 'cache-manager';
 import { Content, IMemory } from './interfaces/client.interface';
 import { ParseCommandService } from './parse-command';
 import { HttpService } from '@nestjs/axios';
+
+import * as dotenv from 'dotenv';
+
+dotenv.config();
 const MAX_TWEET_LENGTH = 280;
 
 // interface TweetData {
@@ -135,8 +139,14 @@ export class TwitterClientInteractions {
     message: IMemory;
     thread: Tweet[];
   }) {
-    if (tweet.userId === process.env.TWITTER_ID) {
-      this.logger.log('skipping tweet from bot itself', tweet.id);
+    if (
+      tweet.userId === process.env.TWITTER_ID ||
+      tweet.userId === process.env.TEAM_TWITTER_ID
+    ) {
+      this.logger.log(
+        'skipping tweet from bot itself or the teams own',
+        tweet.id,
+      );
       // Skip processing if the tweet is from the bot itself
       return;
     }
@@ -192,10 +202,21 @@ export class TwitterClientInteractions {
       this.twitterClientBase.saveRequestMessage(message);
     }
 
-    const defiResponse = await this.parseBotCommandService.handleTweetCommand(
-      tweet.text,
-      tweet.userId,
-    );
+    // const defiResponse = await this.parseBotCommandService.handleTweetCommand(
+    //   tweet.text,
+    //   tweet.userId,
+    // );
+
+    const defiResponse = await this.httpService.axiosRef
+      .post(`${process.env.DEFI_PROCESSOR_API}`, {
+        tweet: tweet.text,
+        userId: tweet.userId,
+      })
+      .then((res) => res.data)
+      .catch((err) => {
+        this.logger.error('Error processing tweet command:', err);
+        return "I'm sorry, I couldn't process your request at this time.";
+      });
     if (!defiResponse) {
       return;
     }
