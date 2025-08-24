@@ -23,6 +23,7 @@ import {
 import { Cookies, CookiesSchema } from 'src/database/schemas/cookie.schema';
 import { JwtModule } from '@nestjs/jwt';
 import { HttpModule } from '@nestjs/axios';
+import { IntentDetectionModule } from 'src/intent-detection/intent-detection.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { HttpModule } from '@nestjs/axios';
     MongooseModule.forFeature([{ name: Cookies.name, schema: CookiesSchema }]),
     WalletModule,
     XfiDexModule,
+    IntentDetectionModule,
   ],
   providers: [
     TwitterClientService,

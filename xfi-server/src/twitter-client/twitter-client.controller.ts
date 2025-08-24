@@ -4,10 +4,14 @@ import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { CommandDto } from './dto/command.dto';
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
 import { PromptResponseDto } from './dto/response.dto';
+import { IntentDetectionService } from 'src/intent-detection/intent-detection.service';
 
 @Controller('bot-command')
 export class TwitterClientController {
-  constructor(private readonly handleDefiService: ParseCommandService) {}
+  constructor(
+    private readonly handleDefiService: ParseCommandService,
+    private readonly intentService: IntentDetectionService,
+  ) {}
   @Post()
   // @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Send Command to the bot' })
@@ -37,6 +41,15 @@ export class TwitterClientController {
       undefined,
       'twitter',
     );
+
+    return data;
+  }
+
+  @Post('intent')
+  @ApiOperation({ summary: 'get command intent' })
+  @ApiOkResponse({ type: PromptResponseDto })
+  async intent(@Body() commandDto: CommandDto) {
+    const data = await this.intentService.agentChat(commandDto.prompt);
 
     return data;
   }

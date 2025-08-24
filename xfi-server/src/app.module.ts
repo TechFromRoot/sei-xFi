@@ -7,6 +7,7 @@ import { DatabaseModule } from './database/database.module';
 import { WalletModule } from './wallet/wallet.module';
 import { XfiDexModule } from './xfi-defi/xfi-defi.module';
 import { AuthModule } from './auth/auth.module';
+import { IntentDetectionModule } from './intent-detection/intent-detection.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AuthModule } from './auth/auth.module';
     // XfiAgentModule,
     XfiDexModule,
     AuthModule,
+    IntentDetectionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
