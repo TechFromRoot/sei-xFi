@@ -26,4 +26,18 @@ export class TwitterClientController {
 
     return { response: data };
   }
+
+  @Post('from-twitter')
+  @ApiOperation({ summary: 'Send Command to the bot' })
+  @ApiOkResponse({ type: PromptResponseDto })
+  async fromTwitter(@Body() commandDto: CommandDto) {
+    const data = await this.handleDefiService.handleTweetCommand(
+      commandDto.prompt,
+      commandDto.userId,
+      undefined,
+      'twitter',
+    );
+
+    return data;
+  }
 }

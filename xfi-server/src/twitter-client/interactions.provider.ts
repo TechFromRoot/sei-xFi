@@ -11,6 +11,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
 import { Content, IMemory } from './interfaces/client.interface';
 import { ParseCommandService } from './parse-command';
+import { HttpService } from '@nestjs/axios';
 const MAX_TWEET_LENGTH = 280;
 
 // interface TweetData {
@@ -23,6 +24,7 @@ export class TwitterClientInteractions {
   private readonly logger = new Logger(TwitterClientInteractions.name);
 
   constructor(
+    private readonly httpService: HttpService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private readonly twitterClientBase: TwitterClientBase,
     private readonly parseBotCommandService: ParseCommandService,

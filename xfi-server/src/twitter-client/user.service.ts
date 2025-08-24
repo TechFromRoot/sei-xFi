@@ -22,7 +22,6 @@ export type EvmChain = 'ethereum' | 'sei';
 @Injectable()
 export class UserService {
   constructor(
-    private readonly httpService: HttpService,
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly walletService: WalletService,
     @InjectModel(Transaction.name)
