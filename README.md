@@ -1,6 +1,8 @@
-# xFi Wallet 🤖📈
+[![Watch the video](https://img.youtube.com/vi/Qagt5Wvr45w/0.jpg)](https://www.youtube.com/watch?v=Qagt5Wvr45w)
 
-**xFi Wallet** is a DeFi bot that brings **social finance** directly to **Twitter**. It supports **Sei**, enabling users to **tip**, **send**, and **trade tokens** directly by tweeting @xFi_wallet with simple commands.
+# xfi_seiBot 🤖
+
+**xfi_seiBot** is an AI DeFi agent bot that brings **social finance** directly to **Twitter**. It supports **Sei**, enabling users to **tip**, **send**, and **trade tokens** directly by tweeting @xfi_seiBot with simple commands.
 
 ---
 
@@ -20,7 +22,15 @@ Make DeFi interactions **social**, **accessible**, and **frictionless** for ever
 
 ## 🔗 Supported Chains
 
-- **Sei**
+- **Sei Mainnet**
+
+---
+
+## Tools
+
+- **elizaOs**
+- **symphony aggragator**
+- **Dynamics for user signing**
 
 ---
 
@@ -28,40 +38,26 @@ Make DeFi interactions **social**, **accessible**, and **frictionless** for ever
 
 ### 🔐 Account Creation
 
-- Users sign in via **Twitter OAuth** from the xFi web UI.
-- A **new wallet** is **automatically generated** — no external wallet required.
-
-### ⚙️ Bot Customization
-
-- Set **default blockchain** for tips/trades.
-- Enable or disable **direct bot notifications**.
-- More customization options coming soon.
+- Users sign in via **Dynamics Twitter OAuth** from the xFi web UI.
+- A **new server wallet** is **automatically generated** — no external wallet required.
 
 ### 💸 Tipping & Sending Tokens
 
 Users can tip or send tokens using a simple Twitter mention:
 
 ```text
-@xFi_wallet  send 0.0001 mnt to @eketeUg on sei
-@xFi_wallet  send 1 sei to @eketeUg
-@xFi_wallet send 1 sei to 0x2189878C4963B84Fd737640db71D7650214c4A18
+@xfi_seiBot  send 0.0001 sei to @eketeUg on sei
+@xfi_seiBot  send 1 sei to @eketeUg
+@xfi_seiBot send 1 sei to 0x2189878C4963B84Fd737640db71D7650214c4A18
 ```
 
 #### Supported recipient formats:
 
 - Twitter usernames (e.g., `@vitalik`)
-- ENS names (e.g., `vitalik.sei`)
+- ENS names (e.g., `vitalik.eth`)
 - Raw wallet addresses
 
 > 🧾 Gas fees are deducted from the user’s generated wallet. No extra platform fees.
-
----
-
-## 🪙 Supported Tokens
-
-| Chain | Tokens Supported |
-| ----- | ---------------- |
-| Sei   | SEI, USDC, USDT  |
 
 ---
 
@@ -69,8 +65,7 @@ Users can tip or send tokens using a simple Twitter mention:
 
 Visit the xFi web platform to:
 
-- 🔐 Sign in via Twitter
-- 💰 View multichain balances
+- 🔐 Sign in via dynamics wallet Twitter Oauth
 - 📜 Access transaction history
 - 💳 Fund your wallet
 - ⚙️ Configure bot preferences
@@ -85,18 +80,9 @@ Visit the xFi web platform to:
 
 ---
 
-## 🔒 Security
-
-- Wallets are **custodial** and automatically created
-- **Private keys are securely encrypted**
-- Infrastructure follows best practices for key management and security
-
----
-
 ## 🛣️ Roadmap
 
 - 🌍 Expand support to more blockchain networks
-- 💱 Introduce **token trading on EVM chains**
 - ✨ Add advanced bot features and on-platform DeFi tools
 
 ---
@@ -109,7 +95,7 @@ Coming soon — Stay tuned for open-source modules and contribution guidelines.
 
 ## 📩 Contact
 
-<!-- For support or collaboration, reach out via [Twitter](https://x.com/xFi_wallet) -->
+<!-- For support or collaboration, reach out via [Twitter](https://x.com/xfi_sei) -->
 
 ---
 

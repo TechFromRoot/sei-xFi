@@ -1,17 +1,36 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import LandingPage from './pages/LandingPage';
-import HomePage from './pages/HomePage';
+import { useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Nav from "./components/layouts/Nav";
+import Home from "./components/pages/Home";
+import Footer from "./components/layouts/Footer";
+import ScrollToTop from "./components/pages/ScrollToTop";
+import { ToastContainer } from "react-toastify";
+import Dasboard from "./components/pages/Dasboard";
+import PrivateRoute from "./components/pages/PrivateRoute";
+// import reactLogo from './assets/react.svg'
+// import viteLogo from '/vite.svg'
 
-export default function App() {
+function App() {
   return (
-    <Router>
-      <div className="bg-black min-h-screen">
+    <BrowserRouter>
+      <div className="container">
+        <Nav />
+        <ToastContainer />
+        <ScrollToTop />
         <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/home" element={<HomePage />} />
+          <Route exact path="/" element={<Home />} />
+          <Route element={<PrivateRoute />}>
+            <Route exact path="/user" element={<Dasboard />} />
+          </Route>
         </Routes>
+        <Footer />
       </div>
-    </Router>
+    </BrowserRouter>
   );
 }
+
+/**
+ * The header, should have like solana interchanged
+ */
+
+export default App;
