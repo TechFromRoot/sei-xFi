@@ -12,6 +12,8 @@ import { Cache } from 'cache-manager';
 import { Content, IMemory } from './interfaces/client.interface';
 import { ParseCommandService } from './parse-command';
 import { HttpService } from '@nestjs/axios';
+import * as dotenv from 'dotenv';
+dotenv.config();
 const MAX_TWEET_LENGTH = 280;
 
 // interface TweetData {
@@ -31,15 +33,41 @@ export class TwitterClientInteractions {
     @InjectModel(Memory.name) private readonly memoryModel: Model<Memory>,
   ) {}
 
+  // async start() {
+  //   const handleTwitterInteractionsLoop = () => {
+  //     this.handleTwitterInteractions();
+  //     setTimeout(
+  //       handleTwitterInteractionsLoop,
+  //       Number(twitterConfig.TWITTER_POLL_INTERVAL || 30) * 1000, // Default to 2 minutes
+  //     );
+  //   };
+  //   handleTwitterInteractionsLoop();
+  // }
+
   async start() {
-    const handleTwitterInteractionsLoop = () => {
-      this.handleTwitterInteractions();
-      setTimeout(
-        handleTwitterInteractionsLoop,
-        Number(twitterConfig.TWITTER_POLL_INTERVAL || 30) * 1000, // Default to 2 minutes
-      );
+    const pollInterval =
+      Number(twitterConfig.TWITTER_POLL_INTERVAL || 30) * 1000;
+
+    let isRunning = false;
+
+    const handleTwitterInteractionsLoop = async () => {
+      if (isRunning) {
+        console.log('Previous loop still running, skipping this cycle');
+        return;
+      }
+
+      isRunning = true;
+      try {
+        await this.handleTwitterInteractions();
+      } catch (err) {
+        console.error('Error in handleTwitterInteractions:', err);
+      } finally {
+        isRunning = false;
+      }
     };
-    handleTwitterInteractionsLoop();
+
+    // Run on a fixed interval
+    setInterval(handleTwitterInteractionsLoop, pollInterval);
   }
 
   async handleTwitterInteractions() {
@@ -135,8 +163,14 @@ export class TwitterClientInteractions {
     message: IMemory;
     thread: Tweet[];
   }) {
-    if (tweet.userId === process.env.TWITTER_ID) {
-      this.logger.log('skipping tweet from bot itself', tweet.id);
+    if (
+      tweet.userId === process.env.TWITTER_ID ||
+      tweet.userId === process.env.TEAM_TWITTER_ID
+    ) {
+      this.logger.log(
+        'skipping tweet from bot itself or the teams own',
+        tweet.id,
+      );
       // Skip processing if the tweet is from the bot itself
       return;
     }
@@ -189,13 +223,24 @@ export class TwitterClientInteractions {
         roomId,
         createdAt: tweet.timestamp * 1000,
       };
-      this.twitterClientBase.saveRequestMessage(message);
+      await this.twitterClientBase.saveRequestMessage(message);
     }
 
-    const defiResponse = await this.parseBotCommandService.handleTweetCommand(
-      tweet.text,
-      tweet.userId,
-    );
+    // const defiResponse = await this.parseBotCommandService.handleTweetCommand(
+    //   tweet.text,
+    //   tweet.userId,
+    // );
+
+    const defiResponse = await this.httpService.axiosRef
+      .post(`${process.env.DEFI_PROCESSOR_API}`, {
+        userId: tweet.userId,
+        prompt: tweet.text,
+      })
+      .then((res) => res.data)
+      .catch((err) => {
+        this.logger.error('Error processing tweet command:', err);
+        return "I'm sorry, I couldn't process your request at this time.";
+      });
     if (!defiResponse) {
       return;
     }
