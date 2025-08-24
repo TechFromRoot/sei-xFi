@@ -33,6 +33,8 @@ interface ParsedCommand {
   amount?: string;
   token?: Token;
   receiver?: Receiver;
+  isUSD?: boolean;
+  inputToken?: string;
 }
 
 // --- Helper Data ---
@@ -142,12 +144,28 @@ export class ParseCommandService {
     // === SEND / TIP ===
     // const sendRegex =
     //   /(send|tip)\s+([\d.]+)\s+(\w+)\s+to\s+([a-zA-Z0-9.@]+)(?:\s+on\s+(\w+))?/i;
+    // const sendRegex =
+    //   /(send|tip)\s+\$?([\d]+(?:\.\d+)?)\s+\$?([A-Za-z0-9-]+)\s+to\s+([a-zA-Z0-9._@]+)(?:\s+on\s+(\w+))?/i;
     const sendRegex =
-      /(send|tip)\s+([\d]+(?:\.\d+)?)\s+\$?([A-Za-z0-9-]+)\s+to\s+([a-zA-Z0-9._@]+)(?:\s+on\s+(\w+))?/i;
+      /(send|tip)\s+(\$?)([\d]+(?:\.\d+)?)(\$?)\s+\$?([A-Za-z0-9-]+)\s+to\s+([a-zA-Z0-9._@]+)(?:\s+on\s+(\w+))?/i;
     const sendMatch = normalized.match(sendRegex);
     if (sendMatch) {
-      const [, actionRaw, amount, tokenValue, receiverValue, chainMaybe] =
-        sendMatch;
+      // const [, actionRaw, amount, tokenValue, receiverValue, chainMaybe] =
+      //   sendMatch;
+
+      const [
+        ,
+        // full match
+        actionRaw, // "send" | "tip"
+        dollarSignBefore, // "$" if present before amount, "" if not
+        amount, // the number
+        dollarSignAfter,
+        tokenValue, // token symbol or address
+        receiverValue, // recipient
+        chainMaybe, // optional chain
+      ] = sendMatch;
+
+      const isUSD = dollarSignBefore === '$' || dollarSignAfter === '$';
       const action = actionRaw.toLowerCase() as Action;
 
       return {
@@ -163,44 +181,68 @@ export class ParseCommandService {
           type: this.detectReceiverType(receiverValue),
         },
         chain: this.detectChain(chainMaybe ?? tokenValue),
+        isUSD,
       };
     }
 
-    // === BUY / SELL: [amount][token] of [targetToken] ===
-    const buySellOfRegex =
-      /(buy|sell)\s+([\d.]+)\s*([a-zA-Z]+)\s+(?:worth\s+of|of)\s+([a-zA-Z0-9]+)(?:\s+on\s+(\w+))?/i;
-    const buySellOfMatch = normalized.match(buySellOfRegex);
-    if (buySellOfMatch) {
-      const [, actionRaw, amount, payToken, targetToken, chainMaybe] =
-        buySellOfMatch;
-      return {
-        action: actionRaw.toLowerCase() as Action,
-        amount,
-        token: {
-          value: targetToken,
-          type: this.detectTokenType(targetToken),
-        },
-        chain: this.detectChain(chainMaybe ?? payToken),
-      };
-    }
+    // // === BUY / SELL: [amount][token] of [targetToken] ===
+    // const buySellOfRegex =
+    //   /(buy|sell)\s+([\d.]+)\s*([a-zA-Z]+)\s+(?:worth\s+of|of)\s+([a-zA-Z0-9]+)(?:\s+on\s+(\w+))?/i;
+    // const buySellOfMatch = normalized.match(buySellOfRegex);
+    // if (buySellOfMatch) {
+    //   const [, actionRaw, amount, payToken, targetToken, chainMaybe] =
+    //     buySellOfMatch;
+    //   return {
+    //     action: actionRaw.toLowerCase() as Action,
+    //     amount,
+    //     token: {
+    //       value: targetToken,
+    //       type: this.detectTokenType(targetToken),
+    //     },
+    //     chain: this.detectChain(chainMaybe ?? payToken),
+    //   };
+    // }
 
     // === BUY : [token] for [amount][payToken] ===
     // const buySellForRegex =
     //   /(buy|sell)\s+([a-zA-Z0-9]+)\s+for\s+([\d.]+)\s*([a-zA-Z]+)(?:\s+on\s+(\w+))?/i;
+    // const buyRegex =
+    //   /(buy)\s+(0x[a-fA-F0-9]{40}|\$?[A-Za-z0-9-]+)\s+(?:for)\s+([\d]+(?:\.\d+)?)\s*\$?([A-Za-z0-9-]+)/i;
+
     const buyRegex =
-      /(buy)\s+(0x[a-fA-F0-9]{40}|\$?[A-Za-z0-9-]+)\s+(?:for)\s+([\d]+(?:\.\d+)?)\s*\$?([A-Za-z0-9-]+)/i;
+      /(buy)\s+(?:(\$?)([\d]+(?:\.\d+)?)(\$?)\s+)?(0x[a-fA-F0-9]{40}|\$?[A-Za-z0-9-]+)(?:\s+(for|of)\s+(?:(\$?)([\d]+(?:\.\d+)?)(\$?)\s+)?(\$?[A-Za-z0-9-]+))?/i;
+
     const buySellForMatch = normalized.match(buyRegex);
     if (buySellForMatch) {
-      const [, actionRaw, targetToken, amount, payToken, chainMaybe] =
-        buySellForMatch;
+      const [
+        ,
+        actionRaw,
+        dollarBefore,
+        amount,
+        dollarAfter,
+        targetToken,
+        keyword,
+        inDollarBefore,
+        inAmount,
+        inDollarAfter,
+        inputToken,
+      ] = buySellForMatch;
+
+      const isUSD =
+        dollarBefore === '$' ||
+        dollarAfter === '$' ||
+        inDollarBefore === '$' ||
+        inDollarAfter === '$';
+      console.log('keyword :', keyword);
       return {
         action: actionRaw.toLowerCase() as Action,
-        amount,
+        amount: amount || inAmount || null,
         token: {
           value: targetToken,
           type: this.detectTokenType(targetToken),
         },
-        chain: this.detectChain(chainMaybe ?? payToken),
+        isUSD,
+        inputToken: inputToken || null,
       };
     }
 
@@ -288,6 +330,8 @@ export class ParseCommandService {
     user: User,
     originalCommand: string,
     platform: Platform = 'twitter',
+    isUSD?: boolean,
+    ensOrUsername?: string,
   ) {
     console.log(`Sending ${amount} native on ${chain} to ${to}`);
     try {
@@ -309,6 +353,8 @@ export class ParseCommandService {
           amount,
           to,
           data,
+          isUSD ? isUSD : false,
+          ensOrUsername ? ensOrUsername : null,
         );
         return response;
       }
@@ -317,7 +363,7 @@ export class ParseCommandService {
     }
   }
 
-  async handleStableSend(
+  async handleERC20Send(
     chain: string,
     token: string,
     to: string,
@@ -325,6 +371,8 @@ export class ParseCommandService {
     user: User,
     originalCommand: string,
     platform: Platform = 'twitter',
+    isUSD?: boolean,
+    ensOrUsername?: string,
   ) {
     console.log(`Sending ${amount} stable ${token} on ${chain} to ${to}`);
 
@@ -348,7 +396,8 @@ export class ParseCommandService {
           amount,
           to,
           data,
-          6,
+          isUSD ? isUSD : false,
+          ensOrUsername ? ensOrUsername : null,
         );
         return response;
       }
@@ -364,31 +413,33 @@ export class ParseCommandService {
     user: User,
     originalCommand: string,
     platform: Platform = 'twitter',
+    isUSD?: boolean,
+    inputToken?: string,
   ) {
     try {
-      if (chain == 'sei') {
-        const data: Partial<Transaction> = {
-          userId: user.userId,
-          transactionType: 'buy',
-          chain: 'sei',
-          amount: nativeAmount,
-          token: { address: 'sei', tokenType: 'native' },
-          tokenIn: 'sei',
-          tokenOut: token,
-          meta: {
-            platform: platform,
-            originalCommand: originalCommand,
-          },
-        };
-        const response = await this.defiSeiService.buyToken(
-          token,
-          nativeAmount,
-          user,
-          originalCommand,
-          data,
-        );
-        return response;
-      }
+      const data: Partial<Transaction> = {
+        userId: user.userId,
+        transactionType: 'buy',
+        chain: 'sei',
+        amount: isUSD ? `$${nativeAmount}` : nativeAmount,
+        token: { address: 'sei', tokenType: 'native' },
+        tokenIn: `${inputToken}` || 'sei',
+        tokenOut: token,
+        meta: {
+          platform: platform,
+          originalCommand: originalCommand,
+        },
+      };
+
+      const response = await this.defiSeiService.buyToken(
+        token,
+        nativeAmount,
+        user,
+        data,
+        isUSD ? isUSD : false,
+        inputToken ? inputToken : null,
+      );
+      return response;
     } catch (error) {
       console.log(error);
     }
@@ -454,6 +505,7 @@ export class ParseCommandService {
     const createAccountMatch = normalized.match(createAccountRegex);
     const balanceMatch = normalized.toLowerCase().match(balanceRegex);
     const getWalletMatch = normalized.toLowerCase().match(walletRegex);
+    const appUrl = process.env.APP_URL;
 
     try {
       this.logger.log(tweet);
@@ -481,78 +533,24 @@ export class ParseCommandService {
             return `Account created\n\nEVM ADDRESS:\n${newUser.walletAddress}`;
           }
         }
-        const appUrl = process.env.APP_URL;
-        return `Please go to ${appUrl} or send a direct message to create/activate your account to use this bot`;
+
+        return `Please go to ${appUrl} create/activate your account to use this bot`;
       } else if (balanceMatch) {
-        const rawChain = balanceMatch?.[1] || balanceMatch?.[2]; // either position
-        const chain = this.normalizeChain(rawChain);
-        // const action = balanceMatch ? 'balance' : null;
-        let ethBalance;
-        let seiBalance;
-        let formattedUserBalance;
-        if (chain) {
-          switch (chain) {
-            case 'sei':
-              seiBalance = await this.userService.getUserEVMBalance(
-                userId,
-                'sei',
-              );
-              console.log(seiBalance);
-              formattedUserBalance = this.formatBalances({
-                sei: seiBalance,
-              });
-              return formattedUserBalance;
-
-            case 'ethereum':
-              ethBalance = await this.userService.getUserEVMBalance(
-                userId,
-                'ethereum',
-              );
-              console.log(ethBalance);
-              formattedUserBalance = this.formatBalances({
-                ethereum: ethBalance,
-              });
-              return formattedUserBalance;
-
-            default:
-              seiBalance = await this.userService.getUserEVMBalance(
-                userId,
-                'sei',
-              );
-              ethBalance = await this.userService.getUserEVMBalance(
-                userId,
-                'ethereum',
-              );
-              formattedUserBalance = this.formatBalances({
-                sei: seiBalance,
-                ethereum: ethBalance,
-              });
-              return formattedUserBalance;
-          }
-        }
-
-        seiBalance = await this.userService.getUserEVMBalance(userId, 'sei');
-        ethBalance = await this.userService.getUserEVMBalance(
-          userId,
-          'ethereum',
-        );
-        formattedUserBalance = this.formatBalances({
-          sei: seiBalance,
-          ethereum: ethBalance,
-        });
-        return formattedUserBalance;
+        return `Please go to ${appUrl} create/activate your account to use this bot`;
       } else if (createAccountMatch || getWalletMatch) {
         return `Your Account:\n\nEVM ADDRESS:\n${user.walletAddress}`;
       }
 
       const parsed = this.parseTweetCommand(tweet);
+      console.log('parsed :', parsed);
       if (!parsed) {
         console.error('Invalid tweet format.');
         const promptDocsUrl = process.env.PROMPT_DOC;
-        return `Hi, if you’re trying to use a command or just curious how I work, you can check out the available prompts and formats here:👉  ${promptDocsUrl}`;
+        return `Hi, if you’re trying to use a command or just curious how I work, you can check out the terminal at ${appUrl} or the available prompts and formats here:👉  ${promptDocsUrl}`;
       }
 
-      const { action, chain, amount, token, receiver } = parsed;
+      const { action, chain, amount, token, receiver, isUSD, inputToken } =
+        parsed;
       let to: Receiver;
 
       if (receiver) {
@@ -573,7 +571,6 @@ export class ParseCommandService {
         case 'tip':
           if (!to) return console.error('Receiver address missing.');
           if (token.type === 'native') {
-            //TODO: capture usernames here and try to send messages
             const nativeResponse = await this.handleNativeSend(
               chain,
               to.address,
@@ -581,25 +578,15 @@ export class ParseCommandService {
               user,
               tweet,
               platform,
+              isUSD,
+              to.type !== 'wallet' ? to.value : null,
             );
 
-            const startsWithHttps = /^https/.test(nativeResponse);
-            if (startsWithHttps && to.type == 'username') {
-              try {
-                await this.twitterClientBase.sendDirectMessage(
-                  to.userId,
-                  `🔔 Transaction Notification\n${nativeResponse}`,
-                );
-              } catch (error) {
-                console.error('Failed to send DM:', error.message);
-              }
-              return nativeResponse;
-            }
             return nativeResponse;
           }
 
-          if (token.type === 'stable') {
-            const stableResponse = await this.handleStableSend(
+          if (token.type === 'stable' || token.type === 'token') {
+            const stableResponse = await this.handleERC20Send(
               chain,
               token.value,
               to.address,
@@ -607,29 +594,11 @@ export class ParseCommandService {
               user,
               tweet,
               platform,
+              isUSD,
+              to.type !== 'wallet' ? to.value : null,
             );
-            const startsWithHttps = /^https/.test(stableResponse);
-            if (startsWithHttps && to.type == 'username') {
-              try {
-                await this.twitterClientBase.sendDirectMessage(
-                  to.userId,
-                  `🔔 Transaction Notification\n${stableResponse}`,
-                );
-              } catch (error) {
-                console.error('Failed to send DM:', error.message);
-              }
-              return stableResponse;
-            }
             return stableResponse;
           }
-
-        //   return this.handleTokenSend(
-        //     chain,
-        //     token.value,
-        //     to.address,
-        //     amount,
-        //     tweet,
-        //   );
 
         case 'buy':
           return this.handleBuy(
@@ -639,6 +608,8 @@ export class ParseCommandService {
             user,
             tweet,
             platform,
+            isUSD,
+            inputToken,
           );
 
         case 'sell':

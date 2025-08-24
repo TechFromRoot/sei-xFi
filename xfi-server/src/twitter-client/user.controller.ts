@@ -5,11 +5,15 @@ import { TwitterApi } from 'twitter-api-v2';
 import { ApiBody, ApiOkResponse, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/guards/auth.guard';
 import { FilteredTokenResponseDto, UserResponseDto } from './dto/response.dto';
+import { XfiDefiSeiService } from 'src/xfi-defi/xfi-defi-sei.service';
 
 @Controller('users')
 export class UserController {
   private twitterClient = new TwitterApi(process.env.TWITTER_BEARER_TOKEN);
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly defiService: XfiDefiSeiService,
+  ) {}
 
   // @Post()
   // @ApiOperation({ summary: 'Create a new User' })
@@ -28,6 +32,18 @@ export class UserController {
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.userService.updateUser(userId, updateUserDto);
+  }
+
+  @Get('tokens')
+  @ApiOperation({ summary: 'get supported tokens' })
+  async getTokens() {
+    return await this.defiService.getSupportedTokens();
+  }
+
+  @Get('token-price/:token')
+  @ApiOperation({ summary: 'get token price' })
+  async getTokenPrice(@Param('token') token: string) {
+    return await this.defiService.getTokenDetailsBasePrice(token);
   }
 
   @Get(':userId')
