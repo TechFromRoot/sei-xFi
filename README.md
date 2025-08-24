@@ -28,7 +28,8 @@ Make DeFi interactions **social**, **accessible**, and **frictionless** for ever
 
 ## Tools
 
-- **elizaOs**
+- **elizaOs (for twitter bot)**
+- **OpenAI (for intent detection)**
 - **symphony aggragator**
 - **Dynamics for user signing**
 
