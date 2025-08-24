@@ -460,7 +460,7 @@ export class XfiDefiSeiService {
         }
       }
       // return `https://seitrace.com/tx/${transaction.swapReceipt.hash}`;
-      return `swapped ${amount} $${this.removeDollar(tokenInSymbol)} for ${route.amountOut} $${this.removeDollar(tokenOutSymbol)}\nhttps://seitrace.com/tx/${transaction.swapReceipt.hash}`;
+      return `swapped ${amount} $${this.removeDollar(tokenInSymbol)} for ${route.amountOutFormatted} $${this.removeDollar(tokenOutSymbol)}\nhttps://seitrace.com/tx/${transaction.swapReceipt.hash}`;
     } catch (error) {
       console.error('Error in buyToken:', error);
       return 'An error occurred while trying to buy the token.';
@@ -473,11 +473,89 @@ export class XfiDefiSeiService {
     user: User,
     originalCommand: string,
     data: Partial<Transaction>,
+    isUSD?: boolean,
   ) {
     console.log('Swapping ....');
-    console.log(amount);
+    console.log(tokenIn, amount, isUSD);
+    let tokenInSymbol = tokenIn;
+    let decimals = 6;
+
+    tokenIn = tokenIn ? this.removeDollar(tokenIn) : tokenIn;
     const nativeAddress = this.symphony.getConfig().nativeAddress;
     const tokenOut = nativeAddress;
+
+    const isTokenInAddress = tokenIn.startsWith('0x');
+    if (!isTokenInAddress) {
+      try {
+        const supportedToken = await this.getSupportedTokens();
+
+        const tokenInfo: any = Object.values(supportedToken).find(
+          (t: any) =>
+            t.attributes.symbol.toLowerCase() === tokenIn.toLowerCase().trim(),
+        );
+        if (tokenInfo) {
+          tokenIn = tokenInfo.attributes.address;
+          tokenInSymbol = tokenInfo.attributes.symbol;
+          decimals = tokenInfo.attributes.decimals;
+        } else {
+          return `Token ${tokenIn} not supported on https://symph.ag/`;
+        }
+      } catch (error) {
+        console.error('Error fetching supported tokens:', error);
+        return `Token ${tokenIn} not supported on https://symph.ag/`;
+      }
+    }
+    console.log(tokenIn, tokenOut, amount);
+
+    const isPercentage =
+      amount.startsWith('%') ||
+      amount.endsWith('%') ||
+      amount.toLowerCase() === 'all';
+
+    if (isPercentage) {
+      const { balance } = await this.walletService.getERC20Balance(
+        user.walletAddress as `0x${string}`,
+        tokenIn,
+        process.env.SEI_RPC,
+      );
+      if (
+        amount.toLowerCase() === 'all' ||
+        this.removeDollarOrPercent(amount).toLowerCase() === '100'
+      ) {
+        amount = balance.toString();
+        console.log('BalanceErc20:', balance);
+        console.log('amount to swap :', amount);
+      } else {
+        amount = balance.toString();
+        console.log('BalanceErc20:', balance);
+        const percent = 100 / Number(amount);
+        amount = (Number(balance) * percent).toString();
+        console.log('amount to swap :', amount);
+      }
+    }
+
+    if (isUSD) {
+      const tokenDetails = await this.getTokenDetailsBasePrice(tokenIn);
+      if (tokenDetails) {
+        amount = await this.removeDollarOrPercent(amount);
+        const price = parseFloat(tokenDetails.token_price_usd);
+        const tokenInAmount = parseFloat(amount) / price;
+        amount = tokenInAmount.toString();
+        console.log(amount);
+      }
+    }
+    const { balance } = await this.walletService.getERC20Balance(
+      user.walletAddress as `0x${string}`,
+      tokenIn,
+      process.env.SEI_RPC,
+    );
+
+    console.log('BalanceErc20:', balance);
+
+    if (balance < Number(amount)) {
+      return 'Insufficient balance.';
+    }
+
     const decryptedEvmWallet = await this.walletService.decryptEvmWallet(
       process.env.DYNAMIC_WALLET_SECRET!,
       user.walletDetails,
@@ -486,12 +564,20 @@ export class XfiDefiSeiService {
     const signer = new ethers.Wallet(decryptedEvmWallet.privateKey, provider);
     let includesNative = false;
 
+    await this.giveTokenApproval(
+      tokenIn,
+      Number(amount).toFixed(decimals).toString(),
+      signer,
+    );
+    console.log('Approval done....');
+
     const route = await this.symphony.getRoute(tokenIn, tokenOut, amount);
 
     if (tokenIn === nativeAddress || tokenOut === nativeAddress) {
       includesNative = true;
       console.log('Swapping ...., isNative');
     }
+
     const transaction = await swap({
       route: route.route,
       includesNative,
@@ -519,7 +605,7 @@ export class XfiDefiSeiService {
         console.error('Failed to save transaction:', err.message);
       }
     }
-    return `swapped ${amount} ${tokenIn} for ${parseEther(route.amountOut)}\nhttps://seitrace.com/tx/${transaction.swapReceipt.hash}`;
+    return `swapped ${amount} $${this.removeDollar(tokenInSymbol)} for ${route.amountOutFormatted} $SEI\nhttps://seitrace.com/tx/${transaction.swapReceipt.hash}`;
   }
 
   async giveTokenApproval(tokenIn: string, amount: string, signer: Signer) {
@@ -547,5 +633,9 @@ export class XfiDefiSeiService {
 
   private removeDollar(str) {
     return str.replace(/^\$/, ''); // removes $ only at the start
+  }
+
+  private removeDollarOrPercent(str: string): string {
+    return str.replace(/^[$%]|[$%]$/g, '');
   }
 }

@@ -210,7 +210,7 @@ export class ParseCommandService {
     //   /(buy)\s+(0x[a-fA-F0-9]{40}|\$?[A-Za-z0-9-]+)\s+(?:for)\s+([\d]+(?:\.\d+)?)\s*\$?([A-Za-z0-9-]+)/i;
 
     const buyRegex =
-      /(buy)\s+(?:(\$?)([\d]+(?:\.\d+)?)(\$?)\s+)?(0x[a-fA-F0-9]{40}|\$?[A-Za-z0-9-]+)(?:\s+(for|of)\s+(?:(\$?)([\d]+(?:\.\d+)?)(\$?)\s+)?(\$?[A-Za-z0-9-]+))?/i;
+      /(buy|swap)\s+(?:(\$?)([\d]+(?:\.\d+)?)(\$?)\s+)?(0x[a-fA-F0-9]{40}|\$?[A-Za-z0-9-]+)(?:\s+(for|of)\s+(?:(\$?)([\d]+(?:\.\d+)?)(\$?)\s+)?(\$?[A-Za-z0-9-]+))?/i;
 
     const buySellForMatch = normalized.match(buyRegex);
     if (buySellForMatch) {
@@ -249,23 +249,25 @@ export class ParseCommandService {
     // === SELL all / half / percent ===
     // const sellPercentageRegex =
     //   /sell\s+(all|half|\d{1,3}%)\s+(?:of\s+)?([a-zA-Z0-9]+)(?:\s+on\s+(\w+))?/i;
+    // const sellRegex =
+    //   /(sell)\s+(all|100%|[\d]+(?:\.\d+)?%)?\s*(0x[a-fA-F0-9]{40}|\$?[A-Za-z0-9-]+)/i;
     const sellRegex =
-      /(sell)\s+(all|100%|[\d]+(?:\.\d+)?%)?\s*(0x[a-fA-F0-9]{40}|\$?[A-Za-z0-9-]+)/i;
-    const sellPercentMatch = normalized.match(sellRegex);
-    if (sellPercentMatch) {
-      const [, portion, tokenValue, chainMaybe] = sellPercentMatch;
-      let amount = '100';
-      if (portion.toLowerCase() === 'half') amount = '50';
-      else if (portion.endsWith('%')) amount = portion.replace('%', '');
+      /^(sell)\s+(all|\d+(?:\.\d+)?%?|\$?\d+(?:\.\d+)?|\d+\$)\s+(?:of\s+)?(\$?[A-Za-z0-9-]+|0x[a-fA-F0-9]{4,})$/i;
+    const sellMatch = normalized.match(sellRegex);
+    console.log(normalized);
+    console.log('match :', sellMatch);
+    if (sellMatch) {
+      const [, action, rawAmount, tokenValue] = sellMatch;
 
+      const isUSD = rawAmount.startsWith('$') || rawAmount.endsWith('$');
       return {
-        action: 'sell',
-        amount,
+        action: action.toLowerCase() as Action,
+        amount: rawAmount,
         token: {
           value: tokenValue,
           type: this.detectTokenType(tokenValue),
         },
-        chain: this.detectChain(chainMaybe ?? tokenValue),
+        isUSD,
       };
     }
 
@@ -452,32 +454,32 @@ export class ParseCommandService {
     user: User,
     originalCommand: string,
     platform: Platform = 'twitter',
+    isUSD?: boolean,
   ) {
-    console.log(`Selling ${amount}% of ${token} on ${chain}`);
+    console.log(`Selling ${amount}% of ${token}`);
     try {
-      if (chain == 'sei') {
-        const data: Partial<Transaction> = {
-          userId: user.userId,
-          transactionType: 'buy',
-          chain: 'sei',
-          amount: amount,
-          token: { address: token, tokenType: 'token' },
-          tokenIn: token,
-          tokenOut: 'sei',
-          meta: {
-            platform: platform,
-            originalCommand: originalCommand,
-          },
-        };
-        const response = await this.defiSeiService.sellToken(
-          token,
-          amount,
-          user,
-          originalCommand,
-          data,
-        );
-        return response;
-      }
+      const data: Partial<Transaction> = {
+        userId: user.userId,
+        transactionType: 'buy',
+        chain: 'sei',
+        amount: isUSD ? `$${amount}` : amount,
+        token: { address: token, tokenType: 'token' },
+        tokenIn: token,
+        tokenOut: 'sei',
+        meta: {
+          platform: platform,
+          originalCommand: originalCommand,
+        },
+      };
+      const response = await this.defiSeiService.sellToken(
+        token,
+        amount,
+        user,
+        originalCommand,
+        data,
+        isUSD ? isUSD : false,
+      );
+      return response;
     } catch (error) {
       console.log(error);
     }
@@ -620,6 +622,7 @@ export class ParseCommandService {
             user,
             tweet,
             platform,
+            isUSD,
           );
       }
     } catch (error) {
