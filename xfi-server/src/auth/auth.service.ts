@@ -33,7 +33,10 @@ export class AuthService {
           `Username mismatch for user ID ${userData.userId}. Updating username to ${userData.userName}.`,
         );
         if (userData.profileImage) {
-          user.profileImage = userData.profileImage;
+          await this.userModel.findOneAndUpdate(
+            { userId: user.userId },
+            { profileImage: userData.profileImage },
+          );
         }
         user.userName = userData.userName;
         await user.save();
