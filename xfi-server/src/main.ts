@@ -8,6 +8,7 @@ async function bootstrap() {
   const PORT = process.env.PORT || 3827;
 
   const allowedOrigins = [
+    'https://xfi.netlify.app',
     'https://xfibot.xyz',
     'https://a6e86801e7f8.ngrok-free.app',
   ];
