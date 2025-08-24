@@ -21,6 +21,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
+      console.log('Checking CORS for origin:', origin);
       if (!origin) return callback(null, true); // allow Postman/curl
 
       const allowed =
