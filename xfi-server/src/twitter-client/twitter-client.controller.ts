@@ -49,7 +49,7 @@ export class TwitterClientController {
   @ApiOperation({ summary: 'get command intent' })
   @ApiOkResponse({ type: PromptResponseDto })
   async intent(@Body() commandDto: CommandDto) {
-    const data = await this.intentService.agentChat(commandDto.prompt);
+    const data = await this.intentService.aiIntentDetector(commandDto.prompt);
 
     return data;
   }

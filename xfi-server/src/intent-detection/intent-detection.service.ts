@@ -11,61 +11,7 @@ export class IntentDetectionService {
     });
   }
 
-  async intentDetector(message: string) {
-    const response = await this.client.chat.completions.create({
-      model: 'gpt-4o-mini',
-      response_format: {
-        type: 'json_schema',
-        json_schema: {
-          name: 'defi_intent_schema',
-          schema: {
-            type: 'object',
-            properties: {
-              intent: {
-                type: 'string',
-                enum: [
-                  'BUY_TOKEN',
-                  'SELL_TOKEN',
-                  'SEND_TOKEN',
-                  'TIP_TOKEN',
-                  'CHECK_BALANCE',
-                  'UNKNOWN',
-                ],
-              },
-              amount: { type: ['number', 'null'] },
-              token: { type: ['string', 'null'] },
-              receiver: { type: ['string', 'null'] },
-            },
-            required: ['intent'],
-          },
-        },
-      },
-      messages: [
-        {
-          role: 'system',
-          content: `
-            You are an intent and entity extractor for a DeFi agent on Sei Network.
-            Extract the user's intent and details.
-            - If they say "buy", "purchase", etc. → intent = BUY_TOKEN
-            - If they say "sell", "swap", etc. → intent = SELL_TOKEN
-            - If they say "send" or "transfer" → intent = SEND_TOKEN
-            - If they say "tip" or "gift" → intent = TIP_TOKEN
-            - If they say "balance" or "how much" → intent = CHECK_BALANCE
-            - Otherwise → UNKNOWN
-
-            Always fill "amount", "token", and "receiver" if mentioned.
-            - Receiver may be Twitter username (@...), ENS (....eth), or wallet address (0x...).
-          `,
-        },
-        { role: 'user', content: message },
-      ],
-      temperature: 0,
-    });
-
-    return JSON.parse(response.choices[0].message?.content ?? '{}');
-  }
-
-  async agentChat(message: string) {
+  async aiIntentDetector(message: string) {
     try {
       const response = await this.client.chat.completions.create({
         model: 'gpt-4o-mini',

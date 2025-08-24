@@ -526,10 +526,12 @@ export class XfiDefiSeiService {
         console.log('BalanceErc20:', balance);
         console.log('amount to swap :', amount);
       } else {
-        amount = balance.toString();
         console.log('BalanceErc20:', balance);
-        const percent = 100 / Number(amount);
-        amount = (Number(balance) * percent).toString();
+        console.log('percentage to swap :', amount);
+        let percent = this.removeDollarOrPercent(amount);
+        percent = (Number(percent) / 100).toString();
+        console.log('percent :', percent);
+        amount = (Number(balance) * Number(percent)).toString();
         console.log('amount to swap :', amount);
       }
     }
