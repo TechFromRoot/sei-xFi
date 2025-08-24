@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { FaTelegramPlane } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
+import { FaRobot, FaXTwitter } from "react-icons/fa6";
 import { useLocation } from "react-router-dom";
 function Footer() {
   const [showFooter, setShowFooter] = useState(true);
@@ -10,7 +10,7 @@ function Footer() {
   useEffect(() => {
     if (pathname.includes("user") || pathname.includes("class")) {
       setShowFooter(false);
-    }else{
+    } else {
       setShowFooter(true);
     }
   }, [pathname]);
@@ -21,27 +21,23 @@ function Footer() {
       </a>
       <ul>
         <li>
-          <a href="/#home">
-            Home
-          </a>
-        </li>
-                <li>
-          <a href="/#howto">
-            About
-          </a>
+          <a href="/#home">Home</a>
         </li>
         <li>
-          <a href="#">Privacy Policy</a>
+          <a href="/#howto">About</a>
         </li>
+        {/* <li>
+          <a href="#">Privacy Policy</a>
+        </li> */}
       </ul>
       <ul>
         <li>
-          <a href="#" target="_blank" className="btx">
-            <FaTelegramPlane />
+          <a href="https://x.com/xfi_seiBot" target="_blank" className="btx">
+            <FaRobot />
           </a>
         </li>
         <li>
-          <a href="#" target="_blank" className="btx">
+          <a href="https://x.com/xfi_sei" target="_blank" className="btx">
             <FaXTwitter />
           </a>
         </li>
