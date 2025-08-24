@@ -36,3 +36,23 @@ export class User {
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
+
+// // user.schema.ts
+// import { Schema, Document } from 'mongoose';
+
+// export interface UserDocument extends Document {
+//   _id: string;
+//   name: string;
+//   phone?: string;
+//   avatar?: { url: string; publicId: string };
+//   lastSeen?: Date;
+//   pushTokens?: string[]; // for push notifications
+// }
+
+// export const UserSchema = new Schema({
+//   name: { type: String, required: true },
+//   phone: String,
+//   avatar: { url: String, publicId: String },
+//   lastSeen: Date,
+//   pushTokens: [String],
+// });
