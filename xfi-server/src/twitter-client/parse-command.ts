@@ -548,7 +548,7 @@ export class ParseCommandService {
       const parsed = this.parseTweetCommand(tweet);
       if (!parsed) {
         console.error('Invalid tweet format.');
-        const promptDocsUrl = process.env.PROMPT_DOC || 'https://x.com/xFi_bot';
+        const promptDocsUrl = process.env.PROMPT_DOC;
         return `Hi, if you’re trying to use a command or just curious how I work, you can check out the available prompts and formats here:👉  ${promptDocsUrl}`;
       }
 
