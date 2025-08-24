@@ -7,19 +7,17 @@ import { DatabaseModule } from './database/database.module';
 import { WalletModule } from './wallet/wallet.module';
 import { XfiDexModule } from './xfi-defi/xfi-defi.module';
 import { AuthModule } from './auth/auth.module';
+import { IntentDetectionModule } from './ai-intent-detection/intent-detection.module';
 
 @Module({
   imports: [
     CacheModule.register({ isGlobal: true }),
     WalletModule,
     DatabaseModule,
-    // TwitterClientModule,
-    // XfiAgentModule,
-    // XfiDexModule,
     TwitterClientModule,
-    // XfiAgentModule,
     XfiDexModule,
     AuthModule,
+    IntentDetectionModule,
   ],
   controllers: [AppController],
   providers: [AppService],
