@@ -9,7 +9,7 @@ import { XfiDefiEthereumService } from 'src/xfi-defi/xfi-defi-ethereum.service';
 import { TwitterClientBase } from './base.provider';
 import { UserService } from './user.service';
 import { XfiDefiSeiService } from 'src/xfi-defi/xfi-defi-sei.service';
-import { IntentDetectionService } from 'src/intent-detection/intent-detection.service';
+import { IntentDetectionService } from 'src/ai-intent-detection/intent-detection.service';
 
 type TokenType = 'native' | 'stable' | 'token';
 type ReceiverType = 'wallet' | 'ens' | 'username' | 'sns';
