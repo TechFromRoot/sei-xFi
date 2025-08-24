@@ -28,7 +28,7 @@ export class TwitterClientController {
   }
 
   @Post('from-twitter')
-  @ApiOperation({ summary: 'Send Command to the bot' })
+  @ApiOperation({ summary: 'Send Command to the bot via twitter' })
   @ApiOkResponse({ type: PromptResponseDto })
   async fromTwitter(@Body() commandDto: CommandDto) {
     const data = await this.handleDefiService.handleTweetCommand(
