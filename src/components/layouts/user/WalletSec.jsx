@@ -1,17 +1,28 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import dp from "../../../assets/images/dp.jpg";
 import { QRCodeCanvas } from "qrcode.react";
 import { Eye, EyeOff } from "lucide-react";
+import { truncateMiddle } from "../../utils/utils";
 // import "./WalletSec.css"; // 👈 import CSS file
 
-const WalletSec = () => {
+const WalletSec = ({ user, userBalance }) => {
   const [activeModal, setActiveModal] = useState(null);
-  const [amount, setAmount] = useState(500);
+  const [amount, setAmount] = useState(0);
   const [showSeedPhrase, setShowSeedPhrase] = useState(false);
   const [showAmount, setShowAmount] = useState(true);
+  const [copied, setCopied] = useState(false);
   const balanceElementRef = useRef(null);
+
   const seedPhrase =
     "Garri Beans Water Block Gradunar Groundnut hook rate kwiriri milk tea spoon";
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(user ? user.walletAddress : "....");
+    setCopied(true);
+
+    // reset after 500ms
+    setTimeout(() => setCopied(false), 1000);
+  };
 
   function toggleBalance() {
     let showamount = !showAmount;
@@ -23,6 +34,12 @@ const WalletSec = () => {
       balanceElement.textContent = "••••";
     }
   }
+
+  useEffect(() => {
+    if (userBalance.length > 0) {
+      setAmount(userBalance.totalUsd);
+    }
+  }, [userBalance]);
 
   const ReceiveModal = () => (
     <div className="modal-overlay">
@@ -36,7 +53,7 @@ const WalletSec = () => {
 
         <div className="qr-box">
           <QRCodeCanvas
-            value={"0x83...5aF8"}
+            value={user ? user?.walletAddress : ""}
             size={160}
             fgColor={"#000"}
             level={"H"}
@@ -46,19 +63,14 @@ const WalletSec = () => {
         <p className="wallet-text">Your wallet address:</p>
 
         <div className="wallet-address">
-          <code>0x83...5aF8</code>
+          <code>{truncateMiddle(user ? user?.walletAddress : "....")}</code>
         </div>
 
         <button
-          onClick={() => {
-            navigator.clipboard.writeText(
-              "0x83a1b2c3d4e5f6789012345678901234567890aF8"
-            );
-            alert("Address copied to clipboard!");
-          }}
-          className="btn-copy"
+          onClick={handleCopy}
+          className={`btn-copy ${copied ? "active" : ""}`}
         >
-          Copy Address
+          {copied ? "Copied!" : "Copy Address"}
         </button>
       </div>
     </div>
@@ -88,7 +100,7 @@ const WalletSec = () => {
           <div className="reveal-box">
             <div className="lock-icon">🔒</div>
             <p>
-              Click below to reveal your seed phrase. Make sure you're in a
+              Click below to reveal your Private Key. Make sure you're in a
               private location.
             </p>
             <button
@@ -100,15 +112,9 @@ const WalletSec = () => {
           </div>
         ) : (
           <div>
-            <div className="seed-words">
-              {seedPhrase.split(" ").map((word, index) => (
-                <div key={index} className="seed-word">
-                  <span>{index + 1}</span>
-                  <br />
-                  {word}
-                </div>
-              ))}
-            </div>
+            <h2 className="seed-words">
+              Lorem, ipsum dolor sit amet consectetur adipisicing elit. Neque beatae odio corrupti numquam soluta sequi dolor animi omnis provident voluptatibus.
+            </h2>
 
             <div className="seed-actions">
               <button
@@ -161,9 +167,9 @@ const WalletSec = () => {
           <span className="wallet-title">My Wallet</span>
         </div>
         <div className="wallet-header-right">
-          <button className="gift-btn">
+          {/* <button className="gift-btn">
             <sup>0</sup> 🎁
-          </button>
+          </button> */}
           <button
             onClick={() => setActiveModal("seedPhrase")}
             className="gear-btn"
@@ -182,9 +188,14 @@ const WalletSec = () => {
             onClick={() => setActiveModal("receive")}
             className="wallet-address-short"
           >
-            0x83...5aF8 ›
+            {truncateMiddle(user ? user?.walletAddress : "....")} ›
+            <span>{user ? user?.username : ""}</span>
           </div>
-          <img src={dp} alt="" className="wallet-dp" />
+          <img
+            src={user ? user?.profileImage : dp}
+            alt=""
+            className="wallet-dp"
+          />
         </div>
 
         <div className="wallet-card-bottom">
@@ -231,7 +242,31 @@ const WalletSec = () => {
         <button className="tab-active">Tokens</button>
         <button className="tab-inactive">NFTs</button>
       </div>
-      <div className="tokens"></div>
+      <div className="tokens">
+        {/* {Array.from({ length: 20 }).map((_, idx) => (
+          <a href="#" target="_blank" className="token-tab" key={idx}>
+            <div className="first-cont">
+              <img src={dp} alt="" />
+              <h3>SEI</h3>
+            </div>
+            <div className="last-cont">
+              <h3>${(Math.random() * 10).toFixed(2)}</h3>
+              <h4>{(Math.random() * 100).toFixed(4)} TKN</h4>
+            </div>
+          </a>
+        ))} */}
+        {/* 
+        <div className="token-tab">
+          <div className="first-cont">
+            <img src={dp} alt="" />
+            <h3>SEI</h3>
+          </div>
+          <div className="last-cont">
+            <h3>$0.03</h3>
+            <h4>0.98349 SEI</h4>
+          </div>
+        </div> */}
+      </div>
 
       {/* Modals */}
       {activeModal === "receive" && <ReceiveModal />}

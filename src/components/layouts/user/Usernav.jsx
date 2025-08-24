@@ -1,26 +1,26 @@
-import React from 'react'
+import React from "react";
 import logo from "../../../assets/images/logo.png";
 import dp from "../../../assets/images/dp.jpg";
-import { BellDot } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { BellDot } from "lucide-react";
+import { Link } from "react-router-dom";
 
-function Usernav() {
+function Usernav({user}) {
   return (
-    <div className='userNav'>
-       <Link to={"/"} className="logo">
-         <img src={logo} alt="" />
-       </Link>
-       <ul>
-        <li className='btn'>LeaderBoard</li>
-        <li className='notsBtn'>
-            <BellDot />
+    <div className="userNav">
+      <Link to={"/"} className="logo">
+        <img src={logo} alt="" />
+      </Link>
+      <ul>
+        <li className="btn">LeaderBoard</li>
+        <li className="notsBtn">
+          <BellDot />
         </li>
-        <li className='dpCont'>
-           <img src={dp} alt="dp" />
+        <li className="dpCont">
+          <img src={user ? user?.profileImage : dp} alt="dp" />
         </li>
-       </ul>
+      </ul>
     </div>
-  )
+  );
 }
 
-export default Usernav
+export default Usernav;

@@ -6,6 +6,7 @@ import Footer from "./components/layouts/Footer";
 import ScrollToTop from "./components/pages/ScrollToTop";
 import { ToastContainer } from "react-toastify";
 import Dasboard from "./components/pages/Dasboard";
+import PrivateRoute from "./components/pages/PrivateRoute";
 // import reactLogo from './assets/react.svg'
 // import viteLogo from '/vite.svg'
 
@@ -14,11 +15,13 @@ function App() {
     <BrowserRouter>
       <div className="container">
         <Nav />
-      <ToastContainer/>
+        <ToastContainer />
         <ScrollToTop />
         <Routes>
           <Route exact path="/" element={<Home />} />
-          <Route exact path="/user" element={<Dasboard />} />
+          <Route element={<PrivateRoute />}>
+            <Route exact path="/user" element={<Dasboard />} />
+          </Route>
         </Routes>
         <Footer />
       </div>

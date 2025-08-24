@@ -5,14 +5,12 @@ import App from "./App.jsx";
 import { DynamicContextProvider ,DynamicWidget} from "@dynamic-labs/sdk-react-core";
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
     <DynamicContextProvider
       settings={{
-        environmentId: "8da6d0e5-62e9-492e-b33f-818bd526178c",
+        environmentId:  import.meta.env.VITE_DYNAMIC_ENV_ID,
         walletConnectors: [],
       }}
     >
       <App />
     </DynamicContextProvider>
-  </StrictMode>
 );

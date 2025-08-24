@@ -6,6 +6,7 @@ import { MdLockOutline, MdEmail } from "react-icons/md";
 import { FaRegEyeSlash, FaRegEye } from "react-icons/fa6";
 import { HiMiniBars3BottomRight } from "react-icons/hi2";
 import { DynamicWidget, useDynamicContext } from "@dynamic-labs/sdk-react-core";
+import axios from "axios";
 
 function Nav() {
   const userpopUpRef = useRef(null);
@@ -18,20 +19,44 @@ function Nav() {
   const location = useLocation();
   const { pathname } = location;
   //
-  // const { user } = useDynamicContext();
+  const { user } = useDynamicContext();
 
-  // useEffect(() => {
-  //   if (user) {
-  //     console.log(user);
-  //   }
-  // }, [user]);
-  //
+  const saveUserDetails = async (rawData) => {
+    try {
+      const token = localStorage.getItem("authId");
+      if (token) return;
 
-  const toggleUserPopUp = (e) => {
-    e.preventDefault();
-    userpopUpRef.current.classList.toggle("active");
-    setSignIn(true);
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_BASE}/api/auth/login`,
+        rawData
+      );
+      console.log("User saved ✅:", res.data);
+      if (res.data.authenticated) {
+        // console.log("User saved ✅:", res.data.user);
+        localStorage.setItem("authId", res.data.user.userId);
+      }
+      return res.data;
+    } catch (err) {
+      console.error("Error saving user ❌:", err);
+    }
   };
+  useEffect(() => {
+    if (!user) return;
+    // console.log(user);
+    if (user) {
+      // console.log(user?.verifiedCredentials[0]?.oauthMetadata);
+      const rawData = {
+        userId: user?.verifiedCredentials[0]?.oauthMetadata?.id,
+        userName: user?.verifiedCredentials[0]?.oauthMetadata?.username,
+        profileImage:
+          user?.verifiedCredentials[0]?.oauthMetadata?.profile_image_url,
+      };
+      console.log(rawData);
+      if (!rawData.userId) return;
+      saveUserDetails(rawData);
+    }
+  }, [user]);
+
   //
   const toggleMobileMenuPopUp = (e) => {
     e.preventDefault();
@@ -45,7 +70,6 @@ function Nav() {
   //
 
   useEffect(() => {
-    
     if (pathname.includes("user") || pathname.includes("class")) {
       setClassSec(null);
     } else if (pathname.includes("instructor")) {
@@ -80,7 +104,7 @@ function Nav() {
           </Link>
         </li>
 
-        <Link to="sign" className="btn" onClick={toggleUserPopUp}>
+        <Link to="sign" className="btn">
           <DynamicWidget />
         </Link>
       </ul>
