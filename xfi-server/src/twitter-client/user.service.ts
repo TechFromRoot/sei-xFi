@@ -184,11 +184,15 @@ export class UserService {
     const user = await this.userModel.findOne({ userId });
     if (!user) throw new NotFoundException('User not found');
 
-    const balance = await this.httpService.axiosRef.get(
-      `${process.env.BALANCE_API}?id=${user.walletAddress}&is_all=true&chain_id=sei`,
+    // const balance = await this.httpService.axiosRef.get(
+    //   `${process.env.BALANCE_API}?id=${user.walletAddress}&is_all=true&chain_id=sei`,
+    // );
+
+    const balanceProxys = await this.httpService.axiosRef.get(
+      `${process.env.BALANCE_PROXY}/balance?address=${user.walletAddress}`,
     );
 
-    return balance.data.map((token) => ({
+    return balanceProxys.data.data.map((token) => ({
       name: token.name,
       symbol: token.symbol,
       decimals: token.decimals,
