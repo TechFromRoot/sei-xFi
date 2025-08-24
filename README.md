@@ -95,10 +95,6 @@ Coming soon — Stay tuned for open-source modules and contribution guidelines.
 
 ## 📩 Contact
 
-<!-- For support or collaboration, reach out via [Twitter](https://x.com/xfi_sei) -->
+For support or collaboration, reach out via [Twitter](https://x.com/xfi_sei)
 
 ---
-
-## 📝 License
-
-MIT License
