@@ -9,7 +9,7 @@ async function bootstrap() {
 
   const allowedOrigins = [
     'https://xfi.netlify.app',
-    'https://xfisei.xyz/',
+    'https://xfisei.xyz',
     'https://xfibot.xyz',
     'https://a6e86801e7f8.ngrok-free.app',
   ];
