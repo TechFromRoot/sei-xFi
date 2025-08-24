@@ -9,8 +9,8 @@ import { XfiDefiEthereumService } from 'src/xfi-defi/xfi-defi-ethereum.service';
 import { TwitterClientBase } from './base.provider';
 import { UserService } from './user.service';
 import { XfiDefiSeiService } from 'src/xfi-defi/xfi-defi-sei.service';
+import { IntentDetectionService } from 'src/intent-detection/intent-detection.service';
 
-type Action = 'buy' | 'sell' | 'send' | 'tip';
 type TokenType = 'native' | 'stable' | 'token';
 type ReceiverType = 'wallet' | 'ens' | 'username' | 'sns';
 type Platform = 'twitter' | 'twitter-dm' | 'terminal';
@@ -25,14 +25,6 @@ interface Receiver {
   type: ReceiverType;
   value?: string;
   userId?: string;
-}
-
-interface ParsedCommand {
-  action: Action;
-  chain?: string;
-  amount?: string;
-  token?: Token;
-  receiver?: Receiver;
 }
 
 // --- Helper Data ---
@@ -52,6 +44,7 @@ export class ParseCommandService {
     private readonly userService: UserService,
     @InjectModel(User.name)
     readonly userModel: Model<User>,
+    private readonly intentService: IntentDetectionService,
   ) {
     this.ethProvider = new ethers.JsonRpcProvider(process.env.ETHEREUM_RPC);
   }
@@ -136,100 +129,6 @@ export class ParseCommandService {
     return 'wallet';
   }
 
-  parseTweetCommand(tweet: string): ParsedCommand | null {
-    const normalized = tweet.replace(/\s+/g, ' ').trim();
-
-    // === SEND / TIP ===
-    // const sendRegex =
-    //   /(send|tip)\s+([\d.]+)\s+(\w+)\s+to\s+([a-zA-Z0-9.@]+)(?:\s+on\s+(\w+))?/i;
-    const sendRegex =
-      /(send|tip)\s+([\d]+(?:\.\d+)?)\s+\$?([A-Za-z0-9-]+)\s+to\s+([a-zA-Z0-9._@]+)(?:\s+on\s+(\w+))?/i;
-    const sendMatch = normalized.match(sendRegex);
-    if (sendMatch) {
-      const [, actionRaw, amount, tokenValue, receiverValue, chainMaybe] =
-        sendMatch;
-      const action = actionRaw.toLowerCase() as Action;
-
-      return {
-        action,
-        amount,
-        token: {
-          value: tokenValue,
-          type: this.detectTokenType(tokenValue),
-        },
-        receiver: {
-          address: receiverValue,
-          value: receiverValue,
-          type: this.detectReceiverType(receiverValue),
-        },
-        chain: this.detectChain(chainMaybe ?? tokenValue),
-      };
-    }
-
-    // === BUY / SELL: [amount][token] of [targetToken] ===
-    const buySellOfRegex =
-      /(buy|sell)\s+([\d.]+)\s*([a-zA-Z]+)\s+(?:worth\s+of|of)\s+([a-zA-Z0-9]+)(?:\s+on\s+(\w+))?/i;
-    const buySellOfMatch = normalized.match(buySellOfRegex);
-    if (buySellOfMatch) {
-      const [, actionRaw, amount, payToken, targetToken, chainMaybe] =
-        buySellOfMatch;
-      return {
-        action: actionRaw.toLowerCase() as Action,
-        amount,
-        token: {
-          value: targetToken,
-          type: this.detectTokenType(targetToken),
-        },
-        chain: this.detectChain(chainMaybe ?? payToken),
-      };
-    }
-
-    // === BUY : [token] for [amount][payToken] ===
-    // const buySellForRegex =
-    //   /(buy|sell)\s+([a-zA-Z0-9]+)\s+for\s+([\d.]+)\s*([a-zA-Z]+)(?:\s+on\s+(\w+))?/i;
-    const buyRegex =
-      /(buy)\s+(0x[a-fA-F0-9]{40}|\$?[A-Za-z0-9-]+)\s+(?:for)\s+([\d]+(?:\.\d+)?)\s*\$?([A-Za-z0-9-]+)/i;
-    const buySellForMatch = normalized.match(buyRegex);
-    if (buySellForMatch) {
-      const [, actionRaw, targetToken, amount, payToken, chainMaybe] =
-        buySellForMatch;
-      return {
-        action: actionRaw.toLowerCase() as Action,
-        amount,
-        token: {
-          value: targetToken,
-          type: this.detectTokenType(targetToken),
-        },
-        chain: this.detectChain(chainMaybe ?? payToken),
-      };
-    }
-
-    // === SELL all / half / percent ===
-    // const sellPercentageRegex =
-    //   /sell\s+(all|half|\d{1,3}%)\s+(?:of\s+)?([a-zA-Z0-9]+)(?:\s+on\s+(\w+))?/i;
-    const sellRegex =
-      /(sell)\s+(all|100%|[\d]+(?:\.\d+)?%)?\s*(0x[a-fA-F0-9]{40}|\$?[A-Za-z0-9-]+)/i;
-    const sellPercentMatch = normalized.match(sellRegex);
-    if (sellPercentMatch) {
-      const [, portion, tokenValue, chainMaybe] = sellPercentMatch;
-      let amount = '100';
-      if (portion.toLowerCase() === 'half') amount = '50';
-      else if (portion.endsWith('%')) amount = portion.replace('%', '');
-
-      return {
-        action: 'sell',
-        amount,
-        token: {
-          value: tokenValue,
-          type: this.detectTokenType(tokenValue),
-        },
-        chain: this.detectChain(chainMaybe ?? tokenValue),
-      };
-    }
-
-    return null;
-  }
-
   // --- Placeholder Action Handlers ---
 
   async resolveENS(name: string): Promise<Receiver> {
@@ -288,6 +187,8 @@ export class ParseCommandService {
     user: User,
     originalCommand: string,
     platform: Platform = 'twitter',
+    isUSD?: boolean,
+    ensOrUsername?: string,
   ) {
     console.log(`Sending ${amount} native on ${chain} to ${to}`);
     try {
@@ -309,6 +210,8 @@ export class ParseCommandService {
           amount,
           to,
           data,
+          isUSD ? isUSD : false,
+          ensOrUsername ? ensOrUsername : null,
         );
         return response;
       }
@@ -317,7 +220,7 @@ export class ParseCommandService {
     }
   }
 
-  async handleStableSend(
+  async handleERC20Send(
     chain: string,
     token: string,
     to: string,
@@ -325,6 +228,8 @@ export class ParseCommandService {
     user: User,
     originalCommand: string,
     platform: Platform = 'twitter',
+    isUSD?: boolean,
+    ensOrUsername?: string,
   ) {
     console.log(`Sending ${amount} stable ${token} on ${chain} to ${to}`);
 
@@ -348,7 +253,8 @@ export class ParseCommandService {
           amount,
           to,
           data,
-          6,
+          isUSD ? isUSD : false,
+          ensOrUsername ? ensOrUsername : null,
         );
         return response;
       }
@@ -364,31 +270,33 @@ export class ParseCommandService {
     user: User,
     originalCommand: string,
     platform: Platform = 'twitter',
+    isUSD?: boolean,
+    inputToken?: string,
   ) {
     try {
-      if (chain == 'sei') {
-        const data: Partial<Transaction> = {
-          userId: user.userId,
-          transactionType: 'buy',
-          chain: 'sei',
-          amount: nativeAmount,
-          token: { address: 'sei', tokenType: 'native' },
-          tokenIn: 'sei',
-          tokenOut: token,
-          meta: {
-            platform: platform,
-            originalCommand: originalCommand,
-          },
-        };
-        const response = await this.defiSeiService.buyToken(
-          token,
-          nativeAmount,
-          user,
-          originalCommand,
-          data,
-        );
-        return response;
-      }
+      const data: Partial<Transaction> = {
+        userId: user.userId,
+        transactionType: 'buy',
+        chain: 'sei',
+        amount: isUSD ? `$${nativeAmount}` : nativeAmount,
+        token: { address: 'sei', tokenType: 'native' },
+        tokenIn: `${inputToken}` || 'sei',
+        tokenOut: token,
+        meta: {
+          platform: platform,
+          originalCommand: originalCommand,
+        },
+      };
+
+      const response = await this.defiSeiService.buyToken(
+        token,
+        nativeAmount,
+        user,
+        data,
+        isUSD ? isUSD : false,
+        inputToken ? inputToken : null,
+      );
+      return response;
     } catch (error) {
       console.log(error);
     }
@@ -401,32 +309,32 @@ export class ParseCommandService {
     user: User,
     originalCommand: string,
     platform: Platform = 'twitter',
+    isUSD?: boolean,
   ) {
-    console.log(`Selling ${amount}% of ${token} on ${chain}`);
+    console.log(`Selling ${amount}% of ${token}`);
     try {
-      if (chain == 'sei') {
-        const data: Partial<Transaction> = {
-          userId: user.userId,
-          transactionType: 'buy',
-          chain: 'sei',
-          amount: amount,
-          token: { address: token, tokenType: 'token' },
-          tokenIn: token,
-          tokenOut: 'sei',
-          meta: {
-            platform: platform,
-            originalCommand: originalCommand,
-          },
-        };
-        const response = await this.defiSeiService.sellToken(
-          token,
-          amount,
-          user,
-          originalCommand,
-          data,
-        );
-        return response;
-      }
+      const data: Partial<Transaction> = {
+        userId: user.userId,
+        transactionType: 'buy',
+        chain: 'sei',
+        amount: isUSD ? `$${amount}` : amount,
+        token: { address: token, tokenType: 'token' },
+        tokenIn: token,
+        tokenOut: 'sei',
+        meta: {
+          platform: platform,
+          originalCommand: originalCommand,
+        },
+      };
+      const response = await this.defiSeiService.sellToken(
+        token,
+        amount,
+        user,
+        originalCommand,
+        data,
+        isUSD ? isUSD : false,
+      );
+      return response;
     } catch (error) {
       console.log(error);
     }
@@ -439,121 +347,60 @@ export class ParseCommandService {
     username?: string,
     platform: Platform = 'twitter',
   ) {
-    const normalized = tweet.replace(/\s+/g, ' ').trim();
+    let normalized = tweet.replace(/\s+/g, ' ').trim();
+    normalized = this.removeFirstMention(normalized);
 
-    const balanceRegex =
-      /\b(?:get(?:\s+me)?|check|show|see|what(?:'|’)?s|what\s+is|can\s+you\s+get|i\s+want\s+to\s+see)?\s*(?:my\s*)?(?:(sei|ethereum)\s+)?balance(?:\s*(?:on|of|for)?\s*(sei|ethereum|eth))?\b/i;
+    const intent = await this.intentService.aiIntentDetector(normalized);
+    console.log('intent :', intent);
 
-    // for directMessages
-    const createAccountRegex =
-      /\b((c(?:rea|ret|re)te?|a(?:ctiv|ctvat|ctiv)ate?)( (my )?(new )?account)?|i want (to )?(c(?:rea|ret|re)te?|a(?:ctiv|ctvat|ctiv)ate?)(( a)?( new)?( my)? account)?)\b/i;
-
-    const walletRegex =
-      /\b(?:get(?:\s+me)?|show|see|what(?:'|’)?s|what\s+is|can\s+you\s+show|i\s+want\s+to\s+see|give(?:\s+me)?)?\s*(?:my\s*)?(wallet(?:\s+address)?|wallet\s+addr|walletaddr|walletaddress)\b/i;
-
-    const createAccountMatch = normalized.match(createAccountRegex);
-    const balanceMatch = normalized.toLowerCase().match(balanceRegex);
-    const getWalletMatch = normalized.toLowerCase().match(walletRegex);
+    const appUrl = process.env.APP_URL;
 
     try {
       this.logger.log(tweet);
       const user = await this.userModel.findOne({ userId });
 
       if (!user || !user.isActive) {
-        // === CREATE / ACTIVATE ACCOUNT ===
-        if (createAccountMatch) {
-          if (user) {
-            const updatedUser = await this.userModel.findOneAndUpdate(
-              { userId: user.userId },
-              { isActive: true },
-              { new: true },
-            );
-
-            return `Account Activated\n\nEVM ADDRESS:\n${updatedUser.walletAddress}`;
-          } else {
-            const newUser = await this.getOrCreateUser(
-              {
-                id: userId,
-                username: username,
-              },
-              true,
-            );
-            return `Account created\n\nEVM ADDRESS:\n${newUser.walletAddress}`;
-          }
-        }
-        const appUrl = process.env.APP_URL;
-        return `Please go to ${appUrl} or send a direct message to create/activate your account to use this bot`;
-      } else if (balanceMatch) {
-        const rawChain = balanceMatch?.[1] || balanceMatch?.[2]; // either position
-        const chain = this.normalizeChain(rawChain);
-        // const action = balanceMatch ? 'balance' : null;
-        let ethBalance;
-        let seiBalance;
-        let formattedUserBalance;
-        if (chain) {
-          switch (chain) {
-            case 'sei':
-              seiBalance = await this.userService.getUserEVMBalance(
-                userId,
-                'sei',
-              );
-              console.log(seiBalance);
-              formattedUserBalance = this.formatBalances({
-                sei: seiBalance,
-              });
-              return formattedUserBalance;
-
-            case 'ethereum':
-              ethBalance = await this.userService.getUserEVMBalance(
-                userId,
-                'ethereum',
-              );
-              console.log(ethBalance);
-              formattedUserBalance = this.formatBalances({
-                ethereum: ethBalance,
-              });
-              return formattedUserBalance;
-
-            default:
-              seiBalance = await this.userService.getUserEVMBalance(
-                userId,
-                'sei',
-              );
-              ethBalance = await this.userService.getUserEVMBalance(
-                userId,
-                'ethereum',
-              );
-              formattedUserBalance = this.formatBalances({
-                sei: seiBalance,
-                ethereum: ethBalance,
-              });
-              return formattedUserBalance;
-          }
-        }
-
-        seiBalance = await this.userService.getUserEVMBalance(userId, 'sei');
-        ethBalance = await this.userService.getUserEVMBalance(
-          userId,
-          'ethereum',
-        );
-        formattedUserBalance = this.formatBalances({
-          sei: seiBalance,
-          ethereum: ethBalance,
-        });
-        return formattedUserBalance;
-      } else if (createAccountMatch || getWalletMatch) {
-        return `Your Account:\n\nEVM ADDRESS:\n${user.walletAddress}`;
+        return `Please go to ${appUrl} create/activate your account to use this bot`;
+      } else if (intent.intent === 'CHECK_BALANCE') {
+        return `Please go to ${appUrl} to check your account balance`;
+      } else if (intent.intent === 'UNKNOWN') {
+        return `Hi, if you’re trying to use a command or just curious how I work, you can check out the terminal at ${appUrl} or the available prompts and formats here:👉  ${process.env.PROMPT_DOC}`;
       }
 
-      const parsed = this.parseTweetCommand(tweet);
-      if (!parsed) {
-        console.error('Invalid tweet format.');
-        const promptDocsUrl = process.env.PROMPT_DOC || 'https://x.com/xFi_bot';
-        return `Hi, if you’re trying to use a command or just curious how I work, you can check out the available prompts and formats here:👉  ${promptDocsUrl}`;
-      }
-
-      const { action, chain, amount, token, receiver } = parsed;
       let to: Receiver;
+      const action = intent.intent.toLowerCase();
+      const chain = 'sei';
+      const amount = intent.details?.amount
+        ? intent.details.amount.toString()
+        : null;
+      const isUSD = intent.details?.amountType === 'USD';
+      const token: Token = {
+        value: intent.details?.token || null,
+        type: this.detectTokenType(intent.details?.token || 'sei'),
+      };
+      const inputToken = intent.details?.buy?.spendToken || null;
+      const receiverValue = intent.details?.receiver || null;
+      const receiverType = receiverValue
+        ? this.detectReceiverType(receiverValue)
+        : null;
+      const receiver: Receiver = receiverValue
+        ? {
+            address: receiverValue,
+            type: receiverType,
+            value: receiverValue,
+          }
+        : null;
+
+      console.log(
+        'action, chain, amount, token, receiver, isUSD, inputToken :',
+        action,
+        chain,
+        amount,
+        token,
+        receiver,
+        isUSD,
+        inputToken,
+      );
 
       if (receiver) {
         if (receiver.type === 'ens' || receiver.type === 'username') {
@@ -569,11 +416,10 @@ export class ParseCommandService {
       }
 
       switch (action) {
-        case 'send':
-        case 'tip':
+        case 'send_token':
+        case 'tip_token':
           if (!to) return console.error('Receiver address missing.');
           if (token.type === 'native') {
-            //TODO: capture usernames here and try to send messages
             const nativeResponse = await this.handleNativeSend(
               chain,
               to.address,
@@ -581,25 +427,15 @@ export class ParseCommandService {
               user,
               tweet,
               platform,
+              isUSD,
+              to.type !== 'wallet' ? to.value : null,
             );
 
-            const startsWithHttps = /^https/.test(nativeResponse);
-            if (startsWithHttps && to.type == 'username') {
-              try {
-                await this.twitterClientBase.sendDirectMessage(
-                  to.userId,
-                  `🔔 Transaction Notification\n${nativeResponse}`,
-                );
-              } catch (error) {
-                console.error('Failed to send DM:', error.message);
-              }
-              return nativeResponse;
-            }
             return nativeResponse;
           }
 
-          if (token.type === 'stable') {
-            const stableResponse = await this.handleStableSend(
+          if (token.type === 'stable' || token.type === 'token') {
+            const stableResponse = await this.handleERC20Send(
               chain,
               token.value,
               to.address,
@@ -607,48 +443,35 @@ export class ParseCommandService {
               user,
               tweet,
               platform,
+              isUSD,
+              to.type !== 'wallet' ? to.value : null,
             );
-            const startsWithHttps = /^https/.test(stableResponse);
-            if (startsWithHttps && to.type == 'username') {
-              try {
-                await this.twitterClientBase.sendDirectMessage(
-                  to.userId,
-                  `🔔 Transaction Notification\n${stableResponse}`,
-                );
-              } catch (error) {
-                console.error('Failed to send DM:', error.message);
-              }
-              return stableResponse;
-            }
             return stableResponse;
           }
 
-        //   return this.handleTokenSend(
-        //     chain,
-        //     token.value,
-        //     to.address,
-        //     amount,
-        //     tweet,
-        //   );
-
-        case 'buy':
+        case 'buy_token':
           return this.handleBuy(
             chain,
-            token.value,
-            amount,
+            intent.details.buy.tokenToBuy,
+            intent.details.buy.amountToSpend,
             user,
             tweet,
             platform,
+            intent.details.buy.amountType === 'USD',
+            inputToken,
           );
 
-        case 'sell':
+        case 'sell_token':
           return this.handleSell(
             chain,
-            token.value,
-            amount,
+            intent.details.sell.tokenToSell,
+            intent.details.sell.sellPercentage
+              ? `${intent.details.sell.sellPercentage.toString()}%`
+              : null,
             user,
             tweet,
             platform,
+            intent.details.amountType === 'USD',
           );
       }
     } catch (error) {
@@ -714,5 +537,9 @@ export class ParseCommandService {
     }
 
     return result.trim(); // remove last extra newline
+  }
+
+  removeFirstMention(str: string): string {
+    return str.replace(/^@\S+\s*/, '').trim();
   }
 }
