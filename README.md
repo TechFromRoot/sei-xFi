@@ -49,6 +49,7 @@ Users can tip or send tokens using a simple Twitter mention:
 @xfi_seiBot  send 0.0001 sei to @eketeUg on sei
 @xfi_seiBot  send 1 sei to @eketeUg
 @xfi_seiBot send 1 sei to 0x2189878C4963B84Fd737640db71D7650214c4A18
+@xfi_seiBot buy 0x95597eb8d227a7c4b4f5e807a815c5178ee6dbe1 for 0.01 SEI
 ```
 
 #### Supported recipient formats:
