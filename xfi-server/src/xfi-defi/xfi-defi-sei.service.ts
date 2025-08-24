@@ -4,7 +4,7 @@ import { HttpService } from '@nestjs/axios';
 import { Transaction } from 'src/database/schemas/transactions.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { ethers, parseEther, Signer } from 'ethers';
+import { ethers, Signer } from 'ethers';
 import { User } from 'src/database/schemas/user.schema';
 
 const {
