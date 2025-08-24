@@ -12,7 +12,6 @@ import { Cache } from 'cache-manager';
 import { Content, IMemory } from './interfaces/client.interface';
 import { ParseCommandService } from './parse-command';
 import { HttpService } from '@nestjs/axios';
-
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -35,15 +34,41 @@ export class TwitterClientInteractions {
     @InjectModel(Memory.name) private readonly memoryModel: Model<Memory>,
   ) {}
 
+  // async start() {
+  //   const handleTwitterInteractionsLoop = () => {
+  //     this.handleTwitterInteractions();
+  //     setTimeout(
+  //       handleTwitterInteractionsLoop,
+  //       Number(twitterConfig.TWITTER_POLL_INTERVAL || 30) * 1000, // Default to 2 minutes
+  //     );
+  //   };
+  //   handleTwitterInteractionsLoop();
+  // }
+
   async start() {
-    const handleTwitterInteractionsLoop = () => {
-      this.handleTwitterInteractions();
-      setTimeout(
-        handleTwitterInteractionsLoop,
-        Number(twitterConfig.TWITTER_POLL_INTERVAL || 30) * 1000, // Default to 2 minutes
-      );
+    const pollInterval =
+      Number(twitterConfig.TWITTER_POLL_INTERVAL || 30) * 1000;
+
+    let isRunning = false;
+
+    const handleTwitterInteractionsLoop = async () => {
+      if (isRunning) {
+        console.log('Previous loop still running, skipping this cycle');
+        return;
+      }
+
+      isRunning = true;
+      try {
+        await this.handleTwitterInteractions();
+      } catch (err) {
+        console.error('Error in handleTwitterInteractions:', err);
+      } finally {
+        isRunning = false;
+      }
     };
-    handleTwitterInteractionsLoop();
+
+    // Run on a fixed interval
+    setInterval(handleTwitterInteractionsLoop, pollInterval);
   }
 
   async handleTwitterInteractions() {
@@ -209,8 +234,8 @@ export class TwitterClientInteractions {
 
     const defiResponse = await this.httpService.axiosRef
       .post(`${process.env.DEFI_PROCESSOR_API}`, {
-        tweet: tweet.text,
         userId: tweet.userId,
+        prompt: tweet.text,
       })
       .then((res) => res.data)
       .catch((err) => {

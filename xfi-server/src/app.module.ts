@@ -11,15 +11,11 @@ import { AuthModule } from './auth/auth.module';
 @Module({
   imports: [
     CacheModule.register({ isGlobal: true }),
-    WalletModule,
+    // WalletModule,
     DatabaseModule,
-    // TwitterClientModule,
-    // XfiAgentModule,
-    // XfiDexModule,
     TwitterClientModule,
-    // XfiAgentModule,
-    XfiDexModule,
-    AuthModule,
+    // XfiDexModule,
+    // AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
