@@ -75,3 +75,8 @@ export class FilteredTokenResponseDto {
   })
   logo: string;
 }
+
+export class PromptResponseDto {
+  @ApiProperty({ example: 'insuficient balance' })
+  response: string;
+}

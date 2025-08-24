@@ -36,6 +36,7 @@ export class AuthController {
     const authResponse = await this.authService.authenticate(createUserDto);
 
     const isProduction = process.env.NODE_ENV === 'production';
+    console.log('isProduction', isProduction);
 
     res.cookie('auth_token', authResponse.jwt, {
       httpOnly: true,
