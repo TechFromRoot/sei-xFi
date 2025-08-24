@@ -5,7 +5,7 @@ import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const PORT = process.env.PORT || 3827;
+  const PORT = process.env.PORT || 3828;
 
   const allowedOrigins = [
     'https://xfibot.xyz',
