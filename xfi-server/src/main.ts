@@ -7,7 +7,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const PORT = process.env.PORT || 3827;
 
-  const allowedOrigins = ['https://xfibot.xyz'];
+  const allowedOrigins = [
+    'https://xfibot.xyz',
+    'https://a6e86801e7f8.ngrok-free.app',
+  ];
 
   const regexWhitelist = [
     /^http:\/\/localhost:\d+$/, // localhost:port
@@ -38,7 +41,7 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   const config = new DocumentBuilder()
-    .setTitle('IDLE-FINANCE')
+    .setTitle('SEI-XFI')
     .setDescription('sei xFi Server APIs')
     .setVersion('1.0.0')
     .addServer(`http://localhost:${PORT}`, 'Local environment')

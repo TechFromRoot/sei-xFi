@@ -45,28 +45,6 @@ export class TwitterClientInteractions {
 
     const twitterUsername = twitterConfig.TWITTER_USERNAME;
     try {
-      // // check direct dm
-      // const dm =
-      //   await this.twitterClientBase.twitterClient.getDirectMessageConversations(
-      //     this.twitterClientBase.profile.id,
-      //   );
-
-      // // console.log('dm   :', dm.conversations);
-      // await this.twitterClientBase.twitterClient.sendDirectMessage(
-      //   dm.conversations[0].conversationId,
-      //   'Yo man',
-      // );
-
-      // {
-      //   id: '1922802382683168780',
-      //   text: 'Yello',
-      //   senderId: '1871417351066816512',
-      //   recipientId: '1863906534863880192',
-      //   createdAt: '1747266786000',
-      //   mediaUrls: undefined,
-      //   senderScreenName: 'solMIND_ai',
-      //   recipientScreenName: 'TestBots28'
-      // }
       // Check for mentions
       const tweetCandidates = (
         await this.twitterClientBase.fetchSearchTweets(
