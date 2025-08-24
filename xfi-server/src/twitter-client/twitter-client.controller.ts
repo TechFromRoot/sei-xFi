@@ -9,7 +9,7 @@ import { PromptResponseDto } from './dto/response.dto';
 export class TwitterClientController {
   constructor(private readonly handleDefiService: ParseCommandService) {}
   @Post()
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Send Command to the bot' })
   @ApiOkResponse({ type: PromptResponseDto })
   async prompt(@Body() commandDto: CommandDto, @Req() req: any) {
