@@ -538,7 +538,7 @@ export class ParseCommandService {
 
         return `Please go to ${appUrl} create/activate your account to use this bot`;
       } else if (balanceMatch) {
-        return `Please go to ${appUrl} create/activate your account to use this bot`;
+        return `Please go to ${appUrl} to check your account balance`;
       } else if (createAccountMatch || getWalletMatch) {
         return `Your Account:\n\nEVM ADDRESS:\n${user.walletAddress}`;
       }
