@@ -205,7 +205,7 @@ html {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0em 0em;
+    padding: 1em 0em;
     padding-right: 2em;
     /* border: 1px solid var(--text); */
   }
