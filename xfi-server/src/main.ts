@@ -13,10 +13,11 @@ async function bootstrap() {
   ];
 
   const regexWhitelist = [
-    /^http:\/\/localhost:\d+$/, // localhost:port
-    /^http:\/\/127\.0\.0\.1:\d+$/, // 127.0.0.1:port
-    /^https:\/\/.*\.?xfibot\.xyz$/, // any subdomain of discreet.fan
-    /^https:\/\/.*\.?xfibot\.xyz$/, // any subdomain of discreet.fans
+    /^http:\/\/localhost:\d+$/, // http://localhost:3000, 5173 etc
+    /^https:\/\/localhost:\d+$/, // https://localhost:3000 (if using HTTPS locally)
+    /^http:\/\/127\.0\.0\.1:\d+$/, // http://127.0.0.1:3000
+    /^https:\/\/127\.0\.0\.1:\d+$/, // https://127.0.0.1:3000
+    /^https:\/\/.*\.?xfibot\.xyz$/, // any subdomain of xfibot.xyz
   ];
 
   app.enableCors({
